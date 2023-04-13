@@ -55,7 +55,7 @@ class BranchChanger {
             return reinterpret_cast<intptr_t>(from_ptr) - reinterpret_cast<intptr_t>(to_ptr);
         }
 
-        const char* _create_call_instruction(const intptr_t rel_offset); 
+        const char* _create_call_instruction_little_endian(const intptr_t rel_offset); 
         /* TODO */
 
     public:
