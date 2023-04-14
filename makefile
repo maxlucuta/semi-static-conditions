@@ -1,2 +1,2 @@
 main: main.cpp
-	g++ main.cpp -o main -ldl 
+	g++ -g -Wall main.cpp -o main -ldl 
