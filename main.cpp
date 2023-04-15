@@ -105,7 +105,7 @@ class BranchChanger {
             return 0;
         }
 
-        void set_direction(bool condition) const {
+        void set_direction(bool condition) {
             /* Here, we will programatically edit the first 5 bytes of the branch
                method to be a JMP instruction to either of the functions, based on
                the runtime condition. */
