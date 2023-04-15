@@ -23,13 +23,13 @@ class BranchChanger {
 
         const func if_branch;
         const func else_branch;
-        unsigned char* branch_method_bytecode;
+        unsigned char * branch_method_bytecode;
         const unsigned char JMP_OPCODE = 0xe9;
         const int JMP_INSTRUCTION_LENGTH = 4;
         std::array<unsigned char, 4> if_branch_bytecode;
         std::array<unsigned char, 4> else_branch_bytecode;
     
-        intptr_t _compute_offset(const void* from_ptr, const void* to_ptr) const {
+        intptr_t _compute_offset(const void * from_ptr, const void * to_ptr) const {
             /* Computes the relative offset between two instructions in memory, this
                will be used for facilitating the computation of jump offsets between 
                areas in memory. Note, we need to subtract 5 since the length of a
@@ -38,7 +38,7 @@ class BranchChanger {
             return cast(intptr_t, from_ptr) - cast(intptr_t, to_ptr) - 5;
         }
 
-        void _change_page_permissions(const void* address) const {
+        void _change_page_permissions(const void * address) const {
             /* Changes the permissions on the current page that the address resides on
                to allow it to be read, write and executable. This will allow us to 
                modify the direction of the call instruction at runtime. */
@@ -52,7 +52,7 @@ class BranchChanger {
             }
         }
 
-        std::array<unsigned char, 4> _get_address_bytes(const intptr_t& num) const {
+        std::array<unsigned char, 4> _get_address_bytes(const intptr_t & num) const {
             /* Returns a vector of bytes that correspond to relative offset that the call
                instruction must jump to for the specified branch. We will check for the
                endianess of the current system to ensure correct byte ordering. */
@@ -70,20 +70,20 @@ class BranchChanger {
             return arr;
         }
 
-
     public:
-        BranchChanger(const func& if_branch, const func& else_branch) :
+
+        BranchChanger(const func & if_branch, const func & else_branch) :
         if_branch(if_branch), else_branch(else_branch) {
             /* Pre-computes relative addresses and bytes that correspond to jump addresses,
                overwrites page permissions with linux system calls to allow modification of
                the executable while the programme runs. */
 
-            const void* branch_ptr = cast(const void*, &BranchChanger::branch);
-            intptr_t offset_to_if = _compute_offset(cast(void*, if_branch), branch_ptr);
-            intptr_t offset_to_else = _compute_offset(cast(void*, else_branch), branch_ptr);
+            const void * branch_ptr = cast(const void *, &BranchChanger::branch);
+            intptr_t offset_to_if = _compute_offset(cast(void *, if_branch), branch_ptr);
+            intptr_t offset_to_else = _compute_offset(cast(void *, else_branch), branch_ptr);
             if_branch_bytecode = _get_address_bytes(offset_to_if);
             else_branch_bytecode = _get_address_bytes(offset_to_else);
-            branch_method_bytecode = (unsigned char*)branch_ptr;
+            branch_method_bytecode = (unsigned char *)branch_ptr;
             _change_page_permissions(branch_ptr);
             branch_method_bytecode[0] = JMP_OPCODE;
             branch_method_bytecode++; 
@@ -117,7 +117,6 @@ class BranchChanger {
 
             /* TODO: Optimise with bit manipulation to reduce overhead. */
         }
-
 };
 
 
@@ -136,9 +135,9 @@ int main() {
 
     BranchChanger branch = BranchChanger(add, sub);
     branch.set_direction(true);
-    std::cout << branch.branch(22,4) << std::endl;
+    std::cout << branch.branch(1,2) << std::endl;
     branch.set_direction(false);
-    std::cout << branch.branch(22,4) << std::endl;
+    std::cout << branch.branch(1,2) << std::endl;
     return 0;
 
 }
