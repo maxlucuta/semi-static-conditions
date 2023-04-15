@@ -64,7 +64,7 @@ class BranchChanger {
             arr[0] = static_cast<unsigned char>(num & 0xFF);
 
             #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                std::reverse(arr.begin(), arr.end());
+            std::reverse(arr.begin(), arr.end());
             #endif
 
             return arr;
