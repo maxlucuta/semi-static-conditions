@@ -89,6 +89,7 @@ class BranchChanger {
             branch_method_bytecode++; 
         }
 
+        __attribute__((optimize("O0")))
         static int branch(int a, int b) {
             /* This is the trampoline function that serves as the entry point in
                in main. The method has to be declared static (for now) so it
