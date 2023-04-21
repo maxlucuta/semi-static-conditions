@@ -1,2 +1,2 @@
 main: main.cpp
-	g++ main.cpp -O3 -o main
+	g++ -std=c++2a main.cpp -o main
