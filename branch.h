@@ -35,25 +35,25 @@ class BranchChanger
         BYTE * branch_bytecode_;
         std::array<DWORD, 2> bytecode_;
 
-        std::ptrdiff_t ComputeOffset( const void * from, const void * to ) const 
+        static constexpr std::size_t ComputeOffset( const void * from, const void * to ) 
         {
             /* Computes the relative offset between two instructions in memory, this
                will be used the computating the offset for a jump instruction between 
                areas in memory. Note, we need to subtract 5 since the length of a
                relative jmp instruction is 5 bytes. */
 
-            const std::ptrdiff_t address_from = reinterpret_cast<const std::ptrdiff_t>( from );
-            const std::ptrdiff_t address_to = reinterpret_cast<const std::ptrdiff_t>( to );
+            const std::size_t address_from = reinterpret_cast<const std::size_t>( from );
+            const std::size_t address_to = reinterpret_cast<const std::size_t>( to );
             return address_from - address_to - 5;
         }
 
-        void ChangePagePermissions( const void * address ) const
+        static void ChangePagePermissions( const void * address )
         {
             /* Changes the permissions on the current page that the address resides on
                to allow it to be read, write and executable. This will allow us to 
                modify the direction of the call instruction at runtime. */
 
-            std::ptrdiff_t relative_address = reinterpret_cast<uintptr_t>( address );
+            std::size_t relative_address = reinterpret_cast<std::size_t>( address );
             relative_address -= relative_address % PAGE_SIZE;
             void * page_offset = reinterpret_cast<void *>( relative_address );
             if ( mprotect( page_offset, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC ) == -1 ) 
@@ -62,7 +62,7 @@ class BranchChanger
             }
         }
 
-        BranchChanger::DWORD GetAddressBytes( const std::ptrdiff_t & int_byte ) const 
+        static BranchChanger::DWORD GetAddressBytes( const std::size_t & int_byte )
         {
             /* Returns a vector of bytes that correspond to relative offset that the call
                instruction must jump to for the specified branch. We will check for the
@@ -104,8 +104,8 @@ class BranchChanger
                overwrites page permissions with linux system calls to allow modification of
                the executable while the programme runs. */
 
-            const std::ptrdiff_t offset_to_if = ComputeOffset( if_branch_, branch_ptr_ );
-            const std::ptrdiff_t offset_to_else = ComputeOffset( else_branch_, branch_ptr_ );
+            const std::size_t offset_to_if = ComputeOffset( if_branch_, branch_ptr_ );
+            const std::size_t offset_to_else = ComputeOffset( else_branch_, branch_ptr_ );
             bytecode_ = { GetAddressBytes( offset_to_if ), GetAddressBytes( offset_to_else ) };
             PrepareBranch();
         }
