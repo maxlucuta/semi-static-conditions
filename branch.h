@@ -1,101 +1,111 @@
 #ifndef BRANCH_H
 #define BRANCH_H
 
+
 #include <unistd.h>
 #include <sys/mman.h>
 #include <algorithm>
 #include <type_traits>
+#include <cstring>
 
-const unsigned char JMP_OPCODE = 0xE9;
-const int JMP_ADDRESS_LENGTH = 4;
+
+#define PAGE_SIZE 4096
+#define JMP_OPCODE 0xE9
+
 
 template <typename Ret, typename... Args>
 class BranchChanger
 {   
     /* Changes the direction of a branch programatically at runtime, facilitating
-       low overhead function calls that can be switched by the user. The switching
+       low-overhead function calls that can be switched by the user. The switching
        process exploits code segment organisation to compute relative offsets 
        between functions, and alters function calls in memory using an adapted
        trampoline method. */
 
-    using func = Ret(*)(Args...);
+    typedef Ret(*FUNC)( Args... );
+    typedef std::array<unsigned char, 4> BYTE_ARR;
 
     private:
 
-        const void * if_branch;
-        const void * else_branch;
-        const void * branch_ptr;
+        const void * if_branch_;
+        const void * else_branch_;
+        const void * branch_ptr_;
+        unsigned char * branch_bytecode_;
+        std::array<BYTE_ARR, 2> bytecode_;
 
-        unsigned char * branch_bytecode;
-        std::array<std::array<unsigned char, 4>, 2> bytecode;
-
-        const intptr_t _compute_offset(const void * from, const void * to) const 
+        constexpr std::ptrdiff_t ComputeOffset( const void * from, const void * to ) const 
         {
             /* Computes the relative offset between two instructions in memory, this
-               will be used for facilitating the computation of jump offsets between 
+               will be used the computating the offset for a jump instruction between 
                areas in memory. Note, we need to subtract 5 since the length of a
                relative jmp instruction is 5 bytes. */
 
-            const intptr_t address_from = reinterpret_cast<const intptr_t>(from);
-            const intptr_t address_to = reinterpret_cast<const intptr_t>(to);
+            const std::ptrdiff_t address_from = reinterpret_cast<const std::ptrdiff_t>( from );
+            const std::ptrdiff_t address_to = reinterpret_cast<const std::ptrdiff_t>( to );
             return address_from - address_to - 5;
         }
 
-        void _change_page_permissions(const void * address) const
+        constexpr void ChangePagePermissions( const void * address ) const
         {
             /* Changes the permissions on the current page that the address resides on
                to allow it to be read, write and executable. This will allow us to 
                modify the direction of the call instruction at runtime. */
 
-            int page_size = getpagesize();
-            uintptr_t uintptr_address = reinterpret_cast<uintptr_t>(address);
-            uintptr_address -= uintptr_address % page_size;
-            void* offset = reinterpret_cast<void*>(uintptr_address);
-            if(mprotect(offset, page_size, PROT_READ | PROT_WRITE | PROT_EXEC) == -1) 
+            std::ptrdiff_t relative_address = reinterpret_cast<uintptr_t>(address);
+            relative_address -= relative_address % PAGE_SIZE;
+            void * page_offset = reinterpret_cast<void *>(relative_address);
+            if ( mprotect( page_offset, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC ) == -1 ) 
             { 
                 throw std::runtime_error("Could not change page permissions.");
             }
         }
 
-        std::array<unsigned char, 4> _get_address_bytes(const intptr_t & num) const 
+        constexpr BranchChanger::BYTE_ARR GetAddressBytes( const std::ptrdiff_t & num ) const 
         {
             /* Returns a vector of bytes that correspond to relative offset that the call
                instruction must jump to for the specified branch. We will check for the
                endianess of the current system to ensure correct byte ordering. */
 
-            std::array<unsigned char, 4> arr;
-            arr[3] = static_cast<unsigned char>((num >> 24) & 0xFF);
-            arr[2] = static_cast<unsigned char>((num >> 16) & 0xFF);
-            arr[1] = static_cast<unsigned char>((num >> 8) & 0xFF);
-            arr[0] = static_cast<unsigned char>(num & 0xFF);
+            BranchChanger::BYTE_ARR array = {
+                static_cast<unsigned char>( num & 0xFF ),
+                static_cast<unsigned char>( ( num >> 8 ) & 0xFF ),
+                static_cast<unsigned char>( ( num >> 16 ) & 0xFF ),
+                static_cast<unsigned char>( ( num >> 24 ) & 0xFF )
+            };
             #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            std::reverse(arr.begin(), arr.end());
+            std::reverse( array.begin(), array.end() );
             #endif
-            return arr;
+            return array;
+        }
+
+        constexpr void PrepareBranch( bool condition = true )
+        {   
+            /* Prepares the 'branch' method preemptively to minimise runtime overhead. The
+               branch is set to the 'true' direction by default, however this can be changed
+               so it can be user defined if desired. The first byte of 'branch' is changed
+               to a JMP opcode, so at runtime all that needs to be changed is a DWORD. */
+
+            ChangePagePermissions( branch_ptr_ );
+            branch_bytecode_++[0] = JMP_OPCODE;
+            set_direction( condition );
         }
 
     public:
 
-        BranchChanger(const func if_func, const func else_func) :
-        if_branch(reinterpret_cast<const void*>(if_func)), 
-        else_branch(reinterpret_cast<const void*>(else_func)),
-        branch_ptr(reinterpret_cast<const void*>(&BranchChanger::branch))
+        BranchChanger(const FUNC if_func, const FUNC else_func) :
+        if_branch_( reinterpret_cast<const void*>( if_func ) ), 
+        else_branch_( reinterpret_cast<const void*>( else_func ) ),
+        branch_ptr_( reinterpret_cast<const void*>( &BranchChanger::branch ) ),
+        branch_bytecode_( ( unsigned char * ) branch_ptr_ )
         {
             /* Pre-computes relative addresses and bytes that correspond to jump addresses,
                overwrites page permissions with linux system calls to allow modification of
                the executable while the programme runs. */
 
-            const intptr_t offset_to_if = _compute_offset(if_branch, branch_ptr);
-            const intptr_t offset_to_else = _compute_offset(else_branch, branch_ptr);
-            std::array<unsigned char, 4> if_branch_bytecode = _get_address_bytes(offset_to_if);
-            std::array<unsigned char, 4> else_branch_bytecode = _get_address_bytes(offset_to_else);
-            bytecode[0] = if_branch_bytecode;
-            bytecode[1] = else_branch_bytecode;
-            branch_bytecode = (unsigned char *)branch_ptr;
-            _change_page_permissions(branch_ptr);
-            branch_bytecode[0] = JMP_OPCODE;
-            branch_bytecode++;
-            set_direction(true);
+            const std::ptrdiff_t offset_to_if = ComputeOffset( if_branch_, branch_ptr_ );
+            const std::ptrdiff_t offset_to_else = ComputeOffset( else_branch_, branch_ptr_ );
+            bytecode_ = { GetAddressBytes( offset_to_if ), GetAddressBytes( offset_to_else ) };
+            PrepareBranch();
         }
 
         __attribute__((optimize("O0")))
@@ -117,11 +127,10 @@ class BranchChanger
 
         void set_direction(bool condition) 
         {
-            /* Here, we will programatically edit the first 5 bytes of the branch
-               method to be a JMP instruction to either of the functions, based on
-               the runtime condition. */
-
-            std::copy(bytecode[condition].begin(), bytecode[condition].end(), branch_bytecode);
+            /* Programatically alters the relative JMP offset in memory depending on
+               the runtime condition (DWORD copy into executable code). */
+            
+            memcpy(branch_bytecode_, bytecode_[condition].data(), 4);
         }
 };
 
