@@ -1,116 +1,140 @@
-/* Maximilian Lucuta - Benchmark
+/* Application Benchmarking for BranchChanger Construct
+   
+   Maximilian Lucuta
+   Imperial College London
 
-   Scenario - Suppose we have a real time stream of orders, either a BUY or SELL, which
-   periodically changes based on some real time event. In both cases, a worker thread 
-   will run in a continuous loop, which sleeps for some random amount of time, and changing
-   the global action (if already a BUY, changes to SELL ect).
+   Application: 
+
+   The proposed construct has two key methods: set_direction(bool), which
+   can be thought of a single 'expensive' operation, and branch(), which is
+   a single, low cost operation with the overhead of a single assembly
+   instruction, in comparison to a direct call. Intuitively, the direction
+   changing operation cannot lie within the core loop that evaluates the
+   runtime condition, since it has a similar cost to an indirection, which
+   defeats the whole purpose of its functionality. In an event based system,
+   for example, a system that reads in real time data and flips a flag based
+   on some event that is reflected in the data, the set_direction method can
+   be positioned within this method which will only change the flag once an
+   event occurs.
+
+   In this scenario, the cost of the expensive direction changing operation
+   can be 'paid for' by the successive cheap operations of the branch()
+   method, and hence become comptetitive with repeating if statements. The
+   if statements would need to evaluate the condition every single time,
+   and when an event occurs, is likely to mispredict the branch several times
+   which costs clock cycles. The goal is to find: how often does an event
+   need to occur for the overall cost of using BranchChanger to be less than
+   using repeated conditional statements.
+
+   Note:
+
+   The suite below is a crude prototype and bot yet sophisticated enough to
+   make confident conclusions on the results to an academic standard.
 */
 
-
-#include <chrono>
 #include <iostream>
-#include <vector>
 #include <time.h>
-#include <thread>
+#include <vector>
+#include <chrono>
 #include "branch.h"
 
+#define L1_SIZE 98304
+#define ITERATIONS 10000000
+
+void buyOrder();
+void sellOrder();
 
 enum Action { BUY = 1, SELL = 0 };
 
-struct Order {
-    unsigned long amount;
-    Action action;
-};
+/* Dummy array used to read and write to, specifically used
+   to try flush the instruction cache between tests to 
+   negate its effect for measurements. */
+long* clobber = new long[L1_SIZE];
 
-
-long long pendingOrders = 0;
-bool threadRun = true;
+/* Flag for tracking event changes. */
 Action currentEvent = BUY;
-std::vector<int> eventTimesBranch;
-std::vector<int> eventTimesBranchless;
 
+/* Dummy vectors used in 'buy' and 'sell' methods for
+   demonstartion purposes. */
+std::vector<int> buyOrders;
+std::vector<int> sellOrders;
 
-void setUpEvent() {
-    srand(time(NULL));
-    for (int i = 0; i < 300; i++) {
-        int sleepTime = rand() % 10 + 1;
-        eventTimesBranch.push_back(sleepTime);
-        eventTimesBranchless.push_back(sleepTime);
-    }
-}
-
-void buyOrder() {
-    unsigned long amount = rand() % 10000;
-    Order order = { amount, BUY };
-    pendingOrders++;
-}
-
-void sellOrder() {
-    unsigned long amount = rand() % 10000;
-    Order order = { amount, SELL };
-    pendingOrders++;
-}
+/* This array will hold a timeline of events that occur over
+   a set number of iterations. It will contain a 1 or a 0, which
+   denotes a buy or sell order.*/
+std::vector<int> events;
 
 BranchChanger branch = BranchChanger(buyOrder, sellOrder);
 
-void realTimeOrderStreamBranch() {
+/* Helper method to flush instruction cache and initialise data
+   structures used in measurements. We populate the event array
+   as 'an event occurs every x amount of iterations', which can
+   be used as a proxy for 'something happens every x amount of time'. */
+__attribute__((optimize("O0")))
+void flushIntructionCache() {
+    srand(time(NULL));
+    for (int i = 0; i < L1_SIZE; i++) { clobber[i] = rand(); }
+    for (int i = 0; i < ITERATIONS; i++) { 
+        if (i % 1000 == 0) { events.push_back(1); }
+        else { events.push_back(0); }
+    }
+    random_shuffle(std::begin(events), std::end(events));
+    buyOrders.clear();
+    sellOrders.clear();
+}
 
-    while (threadRun) {
-        int sleepTime = eventTimesBranch.back();
-        eventTimesBranch.pop_back();
-        std::this_thread::sleep_for(std::chrono::seconds(sleepTime));
-        if (currentEvent == BUY) { currentEvent = SELL; }
-        else { currentEvent = BUY; }
+void buyOrder() {
+    int newOrderAmount = rand();
+    buyOrders.push_back(newOrderAmount);
+}
+
+void sellOrder() {
+    int newOrderAmount = rand();
+    sellOrders.push_back(newOrderAmount);
+}
+
+void eventBranch(int i) {
+    if (events[i] != currentEvent) {
+        currentEvent = Action(events[i]);
     }
 }
 
-void realTimeOrderStreamBranchless() {
-
-    while (threadRun) {
-        int sleepTime = eventTimesBranchless.back();
-        eventTimesBranchless.pop_back();
-        std::this_thread::sleep_for(std::chrono::seconds(sleepTime));
-        if (currentEvent == BUY) {
-            branch.set_direction(SELL);
-            currentEvent = SELL;
-        } else {
-            branch.set_direction(BUY);
-            currentEvent = BUY; 
-        }
+void eventBranchless(int i) {
+    if (events[i] != currentEvent) {
+        currentEvent = Action(events[i]);
+        branch.set_direction(currentEvent);
     }
 }
 
-
-void benchmarkBranch() {
-
-    std::thread worker(realTimeOrderStreamBranch);
-    auto finish = std::chrono::system_clock::now() + std::chrono::seconds{300};
-
-    while (std::chrono::system_clock::now() < finish) {
-        if (currentEvent == BUY) { buyOrder();
-        } else { sellOrder(); }
+long long benchmarkBranch() {
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < ITERATIONS; i++) {
+        eventBranch(i);
+        if (currentEvent == BUY) { buyOrder(); }
+        else { sellOrder(); }
     }
-    threadRun = false;
-    std::cout << pendingOrders << std::endl;
-    worker.join();
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    return std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 }
 
-void benchmarkBranchless() {
-
-    std::thread worker(realTimeOrderStreamBranchless);
-    auto finish = std::chrono::system_clock::now() + std::chrono::seconds{300};
-    while (std::chrono::system_clock::now() < finish) { branch.branch(); }
-    threadRun = false;
-    std::cout << pendingOrders << std::endl;
-    worker.join();
+long long benchmarkBranchless() {
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < ITERATIONS; i++) {
+        eventBranchless(i);
+        branch.branch();
+    }
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    return std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 }
 
 
 int main() {
-    setUpEvent();
-    benchmarkBranch();
-    pendingOrders = 0;
-    threadRun = true;
-    benchmarkBranchless();
+    flushIntructionCache();
+    auto readingBranched = benchmarkBranch();
+    flushIntructionCache();
+    auto readingBranchless = benchmarkBranchless();
+    std::cout << "Branched execution time: " << readingBranched << std::endl;
+    std::cout << "Branchless execution time: " << readingBranchless << std::endl;
+    delete [] clobber;
     return 0;
 }
