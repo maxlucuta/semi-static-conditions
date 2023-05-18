@@ -48,20 +48,24 @@ enum Action { BUY = 1, SELL = 0 };
 
 /* Dummy array used to read and write to, specifically used
    to try flush the instruction cache between tests to 
-   negate its effect for measurements. */
+   negate its effect for measurements. 
+*/
 long* clobber = new long[L1_SIZE];
 
-/* Flag for tracking event changes. */
+/* Flag for tracking event changes. 
+*/
 Action currentEvent = BUY;
 
 /* Dummy vectors used in 'buy' and 'sell' methods for
-   demonstartion purposes. */
+   demonstartion purposes. 
+*/
 std::vector<int> buyOrders;
 std::vector<int> sellOrders;
 
 /* This array will hold a timeline of events that occur over
    a set number of iterations. It will contain a 1 or a 0, which
-   denotes a buy or sell order.*/
+   denotes a buy or sell order.
+*/
 std::vector<int> events;
 
 BranchChanger branch = BranchChanger(buyOrder, sellOrder);
@@ -69,7 +73,8 @@ BranchChanger branch = BranchChanger(buyOrder, sellOrder);
 /* Helper method to flush instruction cache and initialise data
    structures used in measurements. We populate the event array
    as 'an event occurs every x amount of iterations', which can
-   be used as a proxy for 'something happens every x amount of time'. */
+   be used as a proxy for 'something happens every x amount of time'. 
+*/
 __attribute__((optimize("O0")))
 void flushIntructionCache() {
     srand(time(NULL));
