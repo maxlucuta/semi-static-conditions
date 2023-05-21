@@ -124,7 +124,7 @@ class BranchChanger
             /* Programatically alters the relative JMP offset in memory depending on
                the runtime condition (DWORD copy into executable code). */
             
-            memcpy(bytecode_to_edit_, bytecode_to_insert_[condition], DWORD);
+            std::memcpy(bytecode_to_edit_, bytecode_to_insert_[condition], DWORD);
         }
 };
 
