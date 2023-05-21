@@ -3,6 +3,21 @@
    Maximilian Lucuta
    Imperial College London
    May 2023
+
+   Potential use case:
+
+   The BranchChanger construct uses a 'set_direction' method to switch
+   between branches by programatically altering the assembly code in a
+   'branch' method to jmp to one of two functions. This is essentially
+   a memcpy of 4 bytes to some area in memory and involves some sort of
+   indirection, hense it would not be sensible to use this within a main
+   loop and set_direction each time we evaluate a runtime condition, the
+   branched code will always be more performant.
+
+   Instead, if, for example there is a global flag that determines which
+   direction of a branch should be taken, that changes periodically due
+   to some runtime event, the construct may outperform a conditional 
+   branch. 
 */
 
 #include <benchmark/benchmark.h>
@@ -10,6 +25,10 @@
 #include <time.h>
 #include <thread>
 #include "branch.h"
+
+#define FREQ 1
+
+using namespace std;
 
 __attribute__((optimize("O0")))
 int addOne(int i) { return i + 1; }
@@ -21,21 +40,20 @@ static bool flag;
 static bool run;
 static BranchChanger branch(addOne, subOne);
 
-
 void changeFlagBranch()
 {   
     while (run) {
         flag = !flag;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::microseconds(FREQ));
     }
 }
 
-void changeFlagBranchless()
+void changeFlagBranchless() 
 {   
     while (run) {
         flag = !flag;
         branch.set_direction(flag);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::microseconds(FREQ));
     }
 }
 
@@ -53,7 +71,7 @@ static void benchmarkBranch(benchmark::State& s)
     const int N = 100000;
     for (auto _ : s) {
         s.PauseTiming();
-        std::thread worker(changeFlagBranch);
+        thread worker(changeFlagBranch);
         s.ResumeTiming();
         for (int i = 0; i < N; i++) {
             if (flag) data[flag] += addOne(i);
@@ -76,7 +94,7 @@ static void benchmarkBranchless(benchmark::State& s)
     const int N = 100000;
     for (auto _ : s) {
         s.PauseTiming();
-        std::thread worker(changeFlagBranchless);
+        thread worker(changeFlagBranchless);
         s.ResumeTiming();
         for (int i = 0; i < N; i++) {
             data[flag] += branch.branch(i);
