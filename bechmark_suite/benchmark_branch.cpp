@@ -21,31 +21,22 @@
 */
 
 #include <benchmark/benchmark.h>
+#include <time.h>
 #include <thread>
-#include "branch.h"
 
+#define N 100000000
 
-#define N 20000000
+static int someWork() { return rand(); }
+static int someOtherWork() { return -rand(); }
 
-int memory[2] = { rand(), rand() };
+static int someWork_1 (int a) { return a + rand(); }
+static int someOtherWork_1 (int a) { return a - rand(); }
 
-static void foo() { memory[0] = rand(); }
-static void bar() { memory[1] = rand(); }
+static int someWork_2 (int a, int b) { return a + b + rand(); }
+static int someOtherWork_2 (int a, int b) { return a - b - rand(); }
 
 static bool flag = true;
 static bool run = true;
-static BranchChanger branch(foo, bar);
-
-
-static void runBranchless(int sleep) {
-    do {
-        flag = !flag;
-        branch.set_direction(flag);
-        std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
-        );
-    } while (run);
-}
 
 static void runBranch(int sleep) {
     do {
@@ -56,24 +47,21 @@ static void runBranch(int sleep) {
     } while (run);
 }
 
-static void setup(const benchmark::State& s) { 
-    flag = run = true;
-    memory[0] = rand();
-    memory[1] = rand();
+static void setup(const benchmark::State& s) {
+    flag = true;
+    run = true;
+    srand(time(NULL));
 }
 
-static void benchmarkBranch(benchmark::State& s) {
+static void benchmarkBranch1(benchmark::State& s) {
     int sleep = s.range(0);
     int data[2] = { rand(), rand() };
-    int a = rand(), b = rand();
     std::thread worker(runBranch, sleep);
     for (auto _ : s) {
         for (int i = 0; i < N; i++) {
-            if (flag) foo();
-            else bar();
-            data[flag] += memory[flag];
+            if (flag) data[flag] += someWork();
+            else data[flag] += someOtherWork();
             benchmark::DoNotOptimize(data);
-            benchmark::DoNotOptimize(memory);
         }
         benchmark::ClobberMemory();
     }
@@ -81,25 +69,16 @@ static void benchmarkBranch(benchmark::State& s) {
     worker.join();
 }
 
-BENCHMARK(benchmarkBranch)
-    ->DenseRange(1,10)
-    ->DenseRange(20,100,10)
-    ->DenseRange(200,1000,100)
-    ->DenseRange(2000,10000,1000)
-    ->DenseRange(20000,100000,10000)
-    ->Setup(setup);
-
-static void benchmarkBranchless(benchmark::State& s) {
+static void benchmarkBranch2(benchmark::State& s) {
     int sleep = s.range(0);
     int data[2] = { rand(), rand() };
-    int a = rand(), b = rand();
-    std::thread worker(runBranchless, sleep);
+    std::thread worker(runBranch, sleep);
+    int a = rand();
     for (auto _ : s) {
         for (int i = 0; i < N; i++) {
-            branch.branch();
-            data[flag] += memory[flag];
+            if (flag) data[flag] += someWork_1(a);
+            else data[flag] += someOtherWork_1(a);
             benchmark::DoNotOptimize(data);
-            benchmark::DoNotOptimize(memory);
         }
         benchmark::ClobberMemory();
     }
@@ -107,13 +86,33 @@ static void benchmarkBranchless(benchmark::State& s) {
     worker.join();
 }
 
-BENCHMARK(benchmarkBranchless)
+static void benchmarkBranch3(benchmark::State& s) {
+    int sleep = s.range(0);
+    int data[2] = { rand(), rand() };
+    std::thread worker(runBranch, sleep);
+    int a = rand(), b = rand();
+    for (auto _ : s) {
+        for (int i = 0; i < N; i++) {
+            if (flag) data[flag] += someWork_2(a, b);
+            else data[flag] += someOtherWork_2(a, b);
+            benchmark::DoNotOptimize(data);
+        }
+        benchmark::ClobberMemory();
+    }
+    run = false;
+    worker.join();
+}
+
+BENCHMARK(benchmarkBranch1)
     ->DenseRange(1,10)
     ->DenseRange(20,100,10)
     ->DenseRange(200,1000,100)
     ->DenseRange(2000,10000,1000)
     ->DenseRange(20000,100000,10000)
-    ->Setup(setup);
+    ->Setup(setup)
+    ->Repetitions(10)
+    ->ReportAggregatesOnly(true)
+    ->Unit(benchmark::kMillisecond);
 
 
 BENCHMARK_MAIN();
