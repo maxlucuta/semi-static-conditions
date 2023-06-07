@@ -104,7 +104,7 @@ class BranchChangerBase
 
 
 template <typename Ret, typename... Args>
-class BranchChanger : BranchChangerBase
+class BranchChanger : public BranchChangerBase
 {
     /* Core BranchChanger construct compatible with regular functions and static
        member functions. */
@@ -138,7 +138,7 @@ class BranchChanger : BranchChangerBase
 
 
 template <typename Class, typename Ret, typename... Args>
-class BranchChangerClass : BranchChangerBase
+class BranchChangerClass : public BranchChangerBase
 {
     /* Variation of BranchChanger that allows for the use of non-static class
        member functions only. */
