@@ -1,130 +1,169 @@
 #ifndef BRANCH_H
 #define BRANCH_H
 
-
-#include <unistd.h>
 #include <sys/mman.h>
-#include <algorithm>
 #include <type_traits>
+#include <unistd.h>
+#include <cstdint>
 #include <cstring>
+#include <algorithm>
 
-
-#define PAGE_SIZE 4096
-#define JMP_OPCODE 0xE9
 #define DWORD 4
+#define QWORD 8
+#define JMP_OPCODE 0xe9
 
 
-template <typename Ret, typename... Args>
-class BranchChanger
-{   
-    /* Changes the direction of a branch programatically at runtime, facilitating
-       low-overhead function calls that can be switched by the user. The switching
-       process exploits code segment organisation to compute relative offsets 
-       between functions, and alters function calls in memory using an adapted
-       trampoline method. */
+class BranchChangerBase
+{
+    /* Base class for branch changing funcionality, contains all key methods
+       used to facilitate binary editing. Contains no functionality regarding
+       branch-taking as it requires different template specialisations which
+       cannot be achieved via CRTP or other methods. */
 
-    typedef Ret(*FUNC)( Args... );
+    protected:
 
-    private:
+        unsigned char* bytecodeToEdit;
+        unsigned char jumpOffsets[QWORD];
 
-        unsigned char * bytecode_to_edit_;
-        unsigned char bytecode_to_insert_[2][DWORD];
+        template <typename funcA, typename funcB>
+        intptr_t computeJumpOffset(const funcA from, const funcB to) const
+        {   
+            /* Computes offset between two methods in memory accounting for
+               size of a JMP instruction in bytes. Pragma directives used to
+               hide compiler warnings for void* casts which cannot be avoided
+               when dealing with member-function pointers. */
 
-        constexpr std::intptr_t compute_offset(const FUNC from, const FUNC to) const
-        {
-            /* Computes the relative offset between two instructions in memory, this
-               will be used the computating the offset for a jump instruction between 
-               areas in memory. Note, we need to subtract 5 since the length of a
-               relative jmp instruction is 5 bytes. */
-
-            return (char *) from - (char *) to - 5;
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wpmf-conversions"
+            void* fromAddress = reinterpret_cast<void*>(from);
+            void* toAddress = reinterpret_cast<void*>(to);
+            return (char*)fromAddress - (char*)toAddress - 5;
+            #pragma GCC diagnostic pop
         }
 
-        void change_page_permissions(const unsigned char *address)
-        {
-            /* Changes the permissions on the current page that the address resides on
-               to allow it to be read, write and executable. This will allow us to 
-               modify the direction of the call instruction at runtime. */
+        void changePagePermissions(const unsigned char* address)
+        {   
+            /* Locates the page in memory where a address resides and makes
+               the page accessible to write operations, allowing for binary
+               editing. */
 
-            std::intptr_t relative_address = reinterpret_cast<std::intptr_t>(address);
-            relative_address -= relative_address % PAGE_SIZE;
-            void * page_offset = reinterpret_cast<void *>(relative_address);
-            if (mprotect(page_offset, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC ) == -1) 
-            { 
-                throw std::runtime_error("Could not change page permissions.");
-            }
+            intptr_t pageSize = getpagesize();
+            intptr_t relativeAddress = reinterpret_cast<intptr_t>(address);
+            relativeAddress -= relativeAddress % pageSize;
+            void* pageOffset = reinterpret_cast<void*>(relativeAddress);
+            mprotect(pageOffset, pageSize, PROT_READ | PROT_WRITE | PROT_EXEC);
         }
 
-        void set_address_bytes(const std::intptr_t &offset, unsigned char *destination)
+        void storeOffsetToBranch(const intptr_t& offset, unsigned char* dst)
         {
-            /* Sets a vector of bytes that correspond to relative offset that the call
-               instruction must jump to for the specified branch. We will check for the
-               endianess of the current system to ensure correct byte ordering. */
+            /* Changes numerical represention of offset to 4-byte hexadecimal
+               and stores it in intermediate array which will be indexed when
+               changing the direction of the branch. */
 
-            unsigned char offset_bytes[4] = {
-                static_cast<unsigned char>(offset & 0xFF),
-                static_cast<unsigned char>((offset >> 8) &0xFF),
-                static_cast<unsigned char>((offset >> 16) &0xFF),
-                static_cast<unsigned char>((offset >> 24 ) &0xFF)
+            unsigned char offsetInBytes[DWORD] = {
+                static_cast<unsigned char>(offset & 0xff),
+                static_cast<unsigned char>((offset >> 8) & 0xff),
+                static_cast<unsigned char>((offset >> 16) & 0xff),
+                static_cast<unsigned char>((offset >> 24) & 0xff)
             };
             #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            std::reverse(offset_bytes, offset_bytes + DWORD);
+            std::reverse(offsetInBytes, offsetInBytes + DWORD);
             #endif
-            memcpy(destination, offset_bytes, DWORD);
+            memcpy(dst, offsetInBytes, DWORD);
         }
 
-        void prepare_branch(bool condition)
-        {   
-            /* Prepares the 'branch' method preemptively to minimise runtime overhead. The
-               branch is set to the 'true' direction by default, however this can be changed
-               so it can be user defined if desired. The first byte of 'branch' is changed
-               to a JMP opcode, so at runtime all that needs to be changed is a DWORD. */
+        template <typename funcA, typename funcB>
+        void prepareBranchChanger(
+            const funcA ifBranch, const funcA elseBranch, const funcB self
+        )
+        {
+            /* Essentially the constructor, however extracted to minimise code
+               duplication. Takes pointers to if and else branch, as well as a
+               pointer to the 'branch' method and does all pre-computations so
+               class is ready to be used. Method is only used by base classes. */
 
-            change_page_permissions(bytecode_to_edit_);
-            *bytecode_to_edit_++ = JMP_OPCODE;
-            set_direction(condition);
+            intptr_t jumpOffsetIfBranch = computeJumpOffset(ifBranch, self);
+            intptr_t jumpOffsetElseBranch = computeJumpOffset(elseBranch, self);
+            storeOffsetToBranch(jumpOffsetIfBranch, (jumpOffsets + DWORD));
+            storeOffsetToBranch(jumpOffsetElseBranch, jumpOffsets);
+            changePagePermissions(bytecodeToEdit);
+            *bytecodeToEdit++ = JMP_OPCODE;
+            setDirection(true);
         }
 
     public:
 
-        BranchChanger(const FUNC if_func, const FUNC else_func, bool condition = true) : 
-        bytecode_to_edit_((unsigned char *) &BranchChanger::branch)
+        void setDirection(bool condition)
         {
-            /* Pre-computes relative addresses and bytes that correspond to jump addresses,
-               overwrites page permissions with linux system calls to allow modification of
-               the executable while the programme runs. */
+            /* Changes direction of the current branch by overwriting relative
+               JMP offset with another 4-byte offset. */
 
-            
-            std::intptr_t offset_to_if = compute_offset(if_func, &BranchChanger::branch);
-            std::intptr_t offset_to_else = compute_offset(else_func, &BranchChanger::branch);
-            set_address_bytes(offset_to_else, *bytecode_to_insert_);
-            set_address_bytes(offset_to_if, *(bytecode_to_insert_ + 1));
-            prepare_branch(condition);
+            memcpy(bytecodeToEdit, jumpOffsets + (condition * DWORD), DWORD);
         }
-        
+};
+
+
+template <typename Ret, typename... Args>
+class BranchChanger : BranchChangerBase
+{
+    /* Core BranchChanger construct compatible with regular functions and static
+       member functions. */
+
+    using func = Ret(*)(Args...);
+
+    public:
+
+        BranchChanger(const func ifBranch, const func elseBranch)
+        {   
+            const auto self = &BranchChanger::branch;
+            bytecodeToEdit = (unsigned char*)self;
+            prepareBranchChanger(ifBranch, elseBranch, self);
+        }
+
         __attribute__((optimize("O0")))
         static Ret branch(Args... args)
-        {
-            /* This is the trampoline function that serves as the entry point in
-               in main. The method has to be declared static so it has the same 
-               calling convention as a regular non-class member function (rdi 
-               pushed onto stack with 'this' pointer). Should have the same signature 
-               as the branch methods so the compiler can set up the stack frame 
-               appropriately. Note this method will never fully execute, its first 5 
-               bytes will be overwritten with a JMP instruction to one of two methods. */
+        {   
+            /* Entry point for all branch taking associated with this template. 
+               In reality the function never fully executes since the first 5
+               bytes are overwritten with a JMP instruction, effectively acting
+               as a trampoline. Compile time type checking and return type are
+               just syntactic sugar to allow for compilation. */
 
-            if constexpr (!std::is_void_v<Ret>) 
-            { 
-                return Ret{}; 
+            if constexpr (!std::is_void_v<Ret>)
+            {
+                return Ret{};
             }
         }
+};
 
-        void set_direction(bool condition) 
-        {
-            /* Programatically alters the relative JMP offset in memory depending on
-               the runtime condition (DWORD copy into executable code). */
+
+template <typename Class, typename Ret, typename... Args>
+class BranchChangerClass : BranchChangerBase
+{
+    /* Variation of BranchChanger that allows for the use of non-static class
+       member functions only. */
+
+    using func = Ret(Class::*)(Args...);
+
+    public:
+
+        BranchChangerClass(const func ifBranch, const func elseBranch)
+        {   
+            const auto self = &BranchChangerClass::branch;
+            bytecodeToEdit = (unsigned char*)self;
+            prepareBranchChanger(ifBranch, elseBranch, self);
+        }
+
+        __attribute__((optimize("O0")))
+        static Ret branch(const Class& instance, Args... args)
+        {   
+            /* In case member functions use internal data when called, instance
+               of the class needs to be pushed on the stack. */
             
-            std::memcpy(bytecode_to_edit_, bytecode_to_insert_[condition], DWORD);
+            if constexpr (!std::is_void_v<Ret>)
+            {
+                return Ret{};
+            }
         }
 };
 
