@@ -1,3 +1,6 @@
+#ifndef DUMMY_EXCHANGE_H
+#define DUMMY_EXCHANGE_H
+
 #include <bits/stdc++.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -63,3 +66,5 @@ class Exchange
             );
         }
 };
+
+#endif

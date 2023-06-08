@@ -1,26 +1,16 @@
-#include <time.h>
-#include <thread>
-#include <bits/stdc++.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <benchmark/benchmark.h>
-#include "dummy_exchange.h"
+#include "option_pricing.h"
 #include "../../branch.h"
+
 
 #define N 100000
 
 
-static Exchange NYSE;
 static bool run = true;
 static bool flag = true;
-static BranchChangerClass branch(
-    &Exchange::sendBuyOrder,
-    &Exchange::sendSellOrder
+static BranchChanger branch(
+    blackScholesEuropean,
+    binomialEuropean
 );
 
 
@@ -49,15 +39,25 @@ static void setup(const benchmark::State& s) {
     srand(time(NULL));
 }
 
+
 static void benchmarkBranch(benchmark::State& s) {
     int sleep = s.range(0);
+    OptionPricing optionData[N];
+    double callPrices[2];
+    for (int i = 0; i < N; i++) {
+    	OptionPricing priceData = {0};
+    	generateRandomOptionInputs(priceData);
+    	optionData[i] = priceData;
+    }
     std::thread worker(runBranch, sleep);
     for (auto _ : s) {
         for (int i = 0; i < N; i++) {
-            int orderAmount = rand();
-            if (flag) NYSE.sendBuyOrder(orderAmount);
-            else NYSE.sendSellOrder(orderAmount);
+        	if (flag) callPrices[flag] = blackScholesEuropean(optionData[i]);
+        	else callPrices[flag] = binomialEuropean(optionData[i]);
+        	benchmark::DoNotOptimize(callPrices);
+        	benchmark::DoNotOptimize(optionData);
         }
+        benchmark::ClobberMemory();
     }
     run = false;
     worker.join();
@@ -77,14 +77,22 @@ BENCHMARK(benchmarkBranch)
 
 
 static void benchmarkBranchless(benchmark::State& s) {
-    srand(time(NULL));
     int sleep = s.range(0);
+    OptionPricing optionData[N];
+    double callPrices[2];
+    for (int i = 0; i < N; i++) {
+    	OptionPricing priceData = {0};
+    	generateRandomOptionInputs(priceData);
+    	optionData[i] = priceData;
+    }
     std::thread worker(runBranchless, sleep);
     for (auto _ : s) {
         for (int i = 0; i < N; i++) {
-            int orderAmount = rand();
-            branch.branch(NYSE, orderAmount);
+            callPrices[flag] = branch.branch(optionData[i]);
+            benchmark::DoNotOptimize(callPrices);
+            benchmark::DoNotOptimize(optionData);
         }
+        benchmark::ClobberMemory();
     }
     run = false;
     worker.join();
@@ -102,5 +110,10 @@ BENCHMARK(benchmarkBranchless)
     ->ReportAggregatesOnly(true)
     ->Unit(benchmark::kMillisecond);
 
+
 BENCHMARK_MAIN();
+
+
+
+
 
