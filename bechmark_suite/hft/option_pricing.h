@@ -16,12 +16,14 @@ struct OptionPricing
     double timeToMaturity;
     double riskFreeRate;
     double volatility;
+    double callPrice;
 };
 
 double SND(double n) 
 {
     return 0.5 * (1 + erf(n / sqrt(2)));
 }
+
 
 double blackScholesEuropean(const OptionPricing& priceData)
 {

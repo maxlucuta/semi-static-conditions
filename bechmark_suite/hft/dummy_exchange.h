@@ -19,6 +19,7 @@ class Exchange
         const char* buy = "BUY";
         const char* sell = "SELL";
 
+
     public:
         Exchange(int port = 8000, const char* ip = "69.69.69.69")
         {   
@@ -65,6 +66,7 @@ class Exchange
                 sizeof(serverAddress)
             );
         }
+
 };
 
 #endif

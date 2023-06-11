@@ -69,7 +69,7 @@ class BranchChangerBase
             #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             std::reverse(offsetInBytes, offsetInBytes + DWORD);
             #endif
-            memcpy(dst, offsetInBytes, DWORD);
+            std::memcpy(dst, offsetInBytes, DWORD);
         }
 
         template <typename funcA, typename funcB>
@@ -98,7 +98,7 @@ class BranchChangerBase
             /* Changes direction of the current branch by overwriting relative
                JMP offset with another 4-byte offset. */
 
-            memcpy(bytecodeToEdit, jumpOffsets + (condition * DWORD), DWORD);
+            std::memcpy(bytecodeToEdit, jumpOffsets + (condition * DWORD), DWORD);
         }
 };
 

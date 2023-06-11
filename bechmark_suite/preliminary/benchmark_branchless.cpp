@@ -20,9 +20,8 @@
    branch. 
 */
 
-#include </benchmark/benchmark.h>
+#include <benchmark/benchmark.h>
 #include <thread>
-#include <mutex>
 #include "../../branch.h"
 
 #define N 100000000
@@ -37,7 +36,6 @@ static int someOtherWork_1(int a) { return a - rand(); }
 static int someWork_2 (int a, int b) { return a + b + rand(); }
 static int someOtherWork_2 (int a, int b) { return a - b - rand(); }
 
-std::mutex flag_lock;
 static bool flag = true;
 static bool run = true;
 
@@ -49,9 +47,7 @@ static BranchChanger branch3(someWork_2, someOtherWork_2);
 static void runBranchless(int sleep) {
     do {
         flag = !flag;
-        flag_lock.lock();
-        branch1.set_direction(flag);
-        flag_lock.unlock();
+        branch1.setDirection(flag);
         std::this_thread::sleep_for(
             std::chrono::microseconds(sleep)
         );
@@ -117,9 +113,7 @@ static void benchmarkBranchless4(benchmark::State& s) {
     std::thread worker(runBranchless, sleep);
     for (auto _ : s) {
         for (int i = 0; i < N; i++) {
-            flag_lock.lock();
             data[flag] += branch1.branch();
-            flag_lock.unlock();
             benchmark::DoNotOptimize(data);
         }
         benchmark::ClobberMemory();
@@ -129,15 +123,15 @@ static void benchmarkBranchless4(benchmark::State& s) {
 }
 
 
-BENCHMARK(benchmarkBranchless4)
+BENCHMARK(benchmarkBranchless1)
     ->DenseRange(1,10)
     ->DenseRange(20,100,10)
     ->DenseRange(200,1000,100)
     ->DenseRange(2000,10000,1000)
     ->DenseRange(20000,100000,10000)
     ->Setup(setup)
-    ->Repetitions(10)
-    ->ReportAggregatesOnly(true)
+    //->Repetitions(10)
+    //->ReportAggregatesOnly(true)
     ->Unit(benchmark::kMillisecond);
 
 

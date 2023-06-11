@@ -20,7 +20,7 @@
    branch. 
 */
 
-#include </benchmark/benchmark.h>
+#include <benchmark/benchmark.h>
 #include <time.h>
 #include <thread>
 
@@ -110,8 +110,8 @@ BENCHMARK(benchmarkBranch1)
     ->DenseRange(2000,10000,1000)
     ->DenseRange(20000,100000,10000)
     ->Setup(setup)
-    ->Repetitions(10)
-    ->ReportAggregatesOnly(true)
+    //->Repetitions(10)
+    //->ReportAggregatesOnly(true)
     ->Unit(benchmark::kMillisecond);
 
 
