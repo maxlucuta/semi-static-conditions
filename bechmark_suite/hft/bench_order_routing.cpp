@@ -2,6 +2,7 @@
 #include "dummy_exchange.h"
 #include "../../branch.h"
 
+#define SLEEP 1
 #define N 100000
 
 static Exchange NYSE(7675, "99.82.232.1");
@@ -14,23 +15,41 @@ static BranchChangerClass branchOrder(
 	&Exchange::sendSellOrder
 );
 
-static void runBranch(int sleep) 
+static void branchCacheWarming() {
+	int amount = rand();
+	for (int i = 0; i < N; i++) {
+		if (orderFlag) routes[orderFlag].sendBuyOrder(amount);
+		else routes[orderFlag].sendSellOrder(amount);
+		
+	}
+}
+
+static void branchlessCacheWarming() {
+	int amount = rand();
+	for (int i = 0; i < N; i++) {
+		branchOrder.branch(routes[orderFlag], amount);
+		
+	}
+}
+
+
+static void runBranch() 
 {
     do {
         orderFlag = !orderFlag;
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(SLEEP)
         );
     } while (threadFlag);
 }
 
-static void runBranchless(int sleep) 
+static void runBranchless() 
 {
     do {
         orderFlag = !orderFlag;
         branchOrder.setDirection(orderFlag);
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(SLEEP)
         );
     } while (threadFlag);
 }
@@ -43,16 +62,15 @@ static void setup(const benchmark::State& s)
 }
 
 static void benchmarkBranch(benchmark::State& s)
-{
-	int sleep = s.range(0);
-	std::thread worker(runBranch, sleep);
+{	
+	int amount = rand();
+	std::thread worker(runBranch);
+	branchCacheWarming();
 	for (auto _ : s)
 	{
-		for (int i = 0; i < N; i++)
-		{
-			if (orderFlag) routes[orderFlag].sendBuyOrder(rand());
-			else routes[orderFlag].sendSellOrder(rand());
-		}
+		if (orderFlag) routes[orderFlag].sendBuyOrder(amount);
+		else routes[orderFlag].sendSellOrder(amount);
+		
 	}
 	threadFlag = false;
 	worker.join();
@@ -60,21 +78,18 @@ static void benchmarkBranch(benchmark::State& s)
 
 static void benchmarkBranchless(benchmark::State& s)
 {
-	int sleep = s.range(0);
-	std::thread worker(runBranchless, sleep);
+	int amount = rand();
+	std::thread worker(runBranchless);
+	branchlessCacheWarming();
 	for (auto _ : s)
 	{
-		for (int i = 0; i < N; i++)
-		{
-			branchOrder.branch(routes[orderFlag], rand());
-		}
+		branchOrder.branch(routes[orderFlag], amount);
+		
 	}
 	threadFlag = false;
 	worker.join();
 }
 
-
-
-BENCHMARK(benchmarkBranch)->DenseRange(1,10);
-BENCHMARK(benchmarkBranchless)->DenseRange(1,10);
+BENCHMARK(benchmarkBranch);
+BENCHMARK(benchmarkBranchless);
 BENCHMARK_MAIN();

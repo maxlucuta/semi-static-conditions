@@ -35,6 +35,7 @@ class Exchange
             close(socketFD);
         }
 
+
         void sendBuyOrder(int amount)
         {
             const char* amountStr = std::to_string(amount).c_str();
@@ -50,6 +51,7 @@ class Exchange
                 sizeof(serverAddress)
             );
         }
+
 
         void sendSellOrder(int amount)
         {

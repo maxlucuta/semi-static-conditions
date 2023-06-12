@@ -26,18 +26,18 @@ static OptionPricing receiveMarketData()
 	return optionData;
 }
 
-static void runBranch(int sleep) 
+static void runBranch() 
 {
     do {
         strategyFlag = !strategyFlag;
         orderFlag = !orderFlag;
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(10)
         );
     } while (threadFlag);
 }
 
-static void runBranchless(int sleep) 
+static void runBranchless() 
 {
     do {
         strategyFlag = !strategyFlag;
@@ -45,7 +45,7 @@ static void runBranchless(int sleep)
         branchStrategy.setDirection(strategyFlag);
         branchOrder.setDirection(orderFlag);
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(10)
         );
     } while (threadFlag);
 }
@@ -60,77 +60,42 @@ static void setup(const benchmark::State& s)
 
 static void benchmarkBranch(benchmark::State& s)
 {
-	int sleep = s.range(0);
-	double pricingBuffer[2];
-	std::thread worker(runBranch, sleep);
+	double pricingBuffer[2] = { (double)rand(), (double)rand() };
+	std::thread worker(runBranch);
+	OptionPricing data = receiveMarketData();
 	for (auto _ : s)
 	{
-		for (int i = 0; i < N; i++)
-		{
-			OptionPricing data = receiveMarketData();
 			if (strategyFlag) pricingBuffer[strategyFlag] = blackScholesEuropean(data);
 			else pricingBuffer[strategyFlag] = binomialEuropean(data);
 			if (orderFlag) NYSE.sendBuyOrder((int)pricingBuffer[orderFlag]);
 			else NYSE.sendSellOrder((int)pricingBuffer[orderFlag]);
 			benchmark::DoNotOptimize(pricingBuffer);
 			benchmark::ClobberMemory();
-		}
 	}
 	threadFlag = false;
 	worker.join();
-	auto result = NYSE.getPendingOrders();
-	benchmark::DoNotOptimize(result);
 }
 
-BENCHMARK(benchmarkBranch)
-    ->DenseRange(1,10)
-    /*
-    ->DenseRange(20,100,10)
-    ->DenseRange(200,1000,100)
-    ->DenseRange(2000,10000,1000)
-    ->DenseRange(20000,100000,10000)
-    ->Setup(setup)
-    ->Repetitions(10)
-    ->ReportAggregatesOnly(true)
-    ->MinWarmUpTime(N)
-    */
-    ->Unit(benchmark::kMillisecond);
+BENCHMARK(benchmarkBranch);
 
 static void benchmarkBranchless(benchmark::State& s)
 {
-	int sleep = s.range(0);
-	double pricingBuffer[2];
-	std::thread worker(runBranchless, sleep);
+	double pricingBuffer[2] = { (double)rand(), (double)rand() };
+	std::thread worker(runBranchless);
+	OptionPricing data = receiveMarketData();
 	for (auto _ : s)
 	{
-		for (int i = 0; i < N; i++)
-		{
-			OptionPricing data = receiveMarketData();
-			pricingBuffer[strategyFlag] = branchStrategy.branch(data);
-			branchOrder.branch(NYSE, pricingBuffer[orderFlag]);
-			benchmark::DoNotOptimize(pricingBuffer);
-			benchmark::ClobberMemory();
-		}
+		pricingBuffer[strategyFlag] = branchStrategy.branch(data);
+		branchOrder.branch(NYSE, pricingBuffer[orderFlag]);
+		benchmark::DoNotOptimize(pricingBuffer);
+		benchmark::ClobberMemory();
+		
 	}
 	threadFlag = false;
 	worker.join();
-	auto result = NYSE.getPendingOrders();
-	benchmark::DoNotOptimize(result);
 }
 
-BENCHMARK(benchmarkBranchless)
-    ->DenseRange(1,10)
-    /*
-    ->DenseRange(20,100,10)
-    ->DenseRange(200,1000,100)
-    ->DenseRange(2000,10000,1000)
-    ->DenseRange(20000,100000,10000)
-    ->Setup(setup)
-    ->Repetitions(10)
-    ->ReportAggregatesOnly(true)
-    ->MinWarmUpTime(N)
-    */
-    ->Unit(benchmark::kMillisecond);
+BENCHMARK(benchmarkBranchless);
 
 
 BENCHMARK_MAIN();

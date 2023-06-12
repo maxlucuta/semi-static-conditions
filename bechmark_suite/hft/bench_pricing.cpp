@@ -3,44 +3,59 @@
 #include "../../branch.h"
 
 
+#define SLEEP 1
 #define N 1000000
 
-
-static bool run = true;
-static bool flag = true;
+static bool run;
+static bool flag;
 static BranchChanger branch(
     blackScholesEuropean,
     binomialEuropean
 );
 
 
-static void runBranch(int sleep) {
+static void runBranch() {
     do {
         flag = !flag;
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
-        );
-        flag = !flag;
-        std::this_thread::sleep_for(
-            std::chrono::microseconds(1000)
+            std::chrono::nanoseconds(SLEEP)
         );
     } while (run);
 }
 
-static void runBranchless(int sleep) {
+static void runBranchless() {
     do {
         flag = !flag;
         branch.setDirection(flag);
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
-        );
-        flag = !flag;
-        branch.setDirection(flag);
-        std::this_thread::sleep_for(
-            std::chrono::microseconds(1000)
+            std::chrono::nanoseconds(SLEEP)
         );
     } while (run);
 }
+
+static OptionPricing receiveMarketData() {
+    OptionPricing optionData = {0};
+    generateRandomOptionInputs(optionData);
+    return optionData;
+}
+
+static void branchCacheWarming() {
+    double results[2] = { (double)rand(), (double)rand() };
+    OptionPricing optionData = receiveMarketData();
+    for (int i = 0; i < N; i++) {
+        if (flag) results[flag] += blackScholesEuropean(optionData);
+        else results[flag] += binomialEuropean(optionData);
+    }
+}
+
+static void branchlessCacheWarming() {
+    double results[2] = { (double)rand(), (double)rand() };
+    OptionPricing optionData = receiveMarketData();
+    for (int i = 0; i < N; i++) {
+        results[flag] += branch.branch(optionData);
+    }
+}
+
 
 static void setup(const benchmark::State& s) {
     flag = rand() % 2;
@@ -50,82 +65,40 @@ static void setup(const benchmark::State& s) {
 
 
 static void benchmarkBranch(benchmark::State& s) {
-    int sleep = s.range(0);
-    std::vector<OptionPricing> optionData;
-    optionData.reserve(N);
-    double existingData[2] = {(double)rand(), (double)rand()};
-    for (int i = 0; i < N; i++) {
-        OptionPricing priceData = {0};
-        generateRandomOptionInputs(priceData);
-        optionData.push_back(priceData);
-    }
-    std::thread worker(runBranch, sleep);
+    double results[2] = { (double)rand(), (double)rand() };
+    OptionPricing optionData = receiveMarketData();
+    std::thread worker(runBranch);
+    branchCacheWarming();
     for (auto _ : s) {
-        for (auto option : optionData) {
-            if (flag) option.callPrice = blackScholesEuropean(option);
-            else option.callPrice = binomialEuropean(option);
-            existingData[flag] += option.callPrice;
-            benchmark::DoNotOptimize(optionData);
-            benchmark::DoNotOptimize(existingData);
-        }
+        if (flag) results[flag] += blackScholesEuropean(optionData);
+        else results[flag] += binomialEuropean(optionData);
+        benchmark::DoNotOptimize(results);
         benchmark::ClobberMemory();
-    }
+    } 
     run = false;
     worker.join();
 }
 
 
-BENCHMARK(benchmarkBranch)
-    ->DenseRange(1,10)
-    ->DenseRange(20,100,10)
-    //->DenseRange(200,1000,100)
-    //->DenseRange(2000,10000,1000)
-    //->DenseRange(20000,100000,10000)
-    //->Setup(setup)
-    //->Repetitions(10)
-    //->ReportAggregatesOnly(true)
-    ->MinWarmUpTime(N)
-    ->Unit(benchmark::kMillisecond);
+BENCHMARK(benchmarkBranch);
 
 
 static void benchmarkBranchless(benchmark::State& s) {
-    int sleep = s.range(0);
-    std::vector<OptionPricing> optionData;
-    optionData.reserve(N);
-    double existingData[2] = {(double)rand(), (double)rand()};
-    for (int i = 0; i < N; i++) {
-        OptionPricing priceData = {0};
-        generateRandomOptionInputs(priceData);
-        optionData.push_back(priceData);
-    }
-    std::thread worker(runBranchless, sleep);
+    double results[2] = { (double)rand(), (double)rand() };
+    OptionPricing optionData = receiveMarketData();
+    std::thread worker(runBranchless);
+    branchlessCacheWarming();
     for (auto _ : s) {
-        for (auto option : optionData) {
-            option.callPrice = branch.branch(option);
-            existingData[flag] += option.callPrice;
-            benchmark::DoNotOptimize(optionData);
-            benchmark::DoNotOptimize(existingData);
-        }
+        results[flag] += branch.branch(optionData);
+        benchmark::DoNotOptimize(results);
         benchmark::ClobberMemory();
-    }
+    } 
     run = false;
     worker.join();
 }
 
 
-BENCHMARK(benchmarkBranchless)
-    ->DenseRange(1,10)
-    ->DenseRange(20,100,10)
-    //->DenseRange(200,1000,100)
-    //->DenseRange(2000,10000,1000)
-    //->DenseRange(20000,100000,10000)
-    //->Setup(setup)
-    //->Repetitions(10)
-    //->ReportAggregatesOnly(true)
-    ->MinWarmUpTime(N)
-    ->Unit(benchmark::kMillisecond);
-
-
+BENCHMARK(benchmarkBranchless);
 BENCHMARK_MAIN();
 
 
