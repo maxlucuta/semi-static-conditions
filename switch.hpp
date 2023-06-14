@@ -11,6 +11,7 @@
 
 #define DWORD 4
 #define QWORD 8
+#define N 4
 #define JMP_OPCODE 0xe9
 
 
@@ -22,7 +23,7 @@ class BranchChangerSwitch
     private:
 
         unsigned char* bytecodeToEdit;
-        unsigned char jumpOffsets[4][DWORD];
+        unsigned char jumpOffsets[N][DWORD];
 
         template <typename funcA, typename funcB>
         intptr_t computeJumpOffset(const funcA from, const funcB to) const
@@ -66,7 +67,7 @@ class BranchChangerSwitch
             const auto self = &BranchChangerSwitch::branch;
             bytecodeToEdit = (unsigned char*)self;
             std::vector<typename std::common_type<func...>::type> vec = {args...};
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < N; i++)
             {
                 intptr_t jumpOffsetToBranch = computeJumpOffset(vec[i], self);
                 storeOffsetToBranch(jumpOffsetToBranch, jumpOffsets[i]);

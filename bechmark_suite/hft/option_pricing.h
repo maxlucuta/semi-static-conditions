@@ -105,6 +105,97 @@ void generateRandomOptionInputs(OptionPricing& priceData)
     priceData.volatility = volatilityDist(gen);
 }
 
+int generatePoissonRandomVariable(double lambda) {
+    int x = 0;
+    double p = exp(-lambda);
+    double s = p;
+    double u = rand() / (double)RAND_MAX;
+    while (u > s) {
+        x++;
+        p *= lambda / x;
+        s += p;
+    }
+    return x;
+}
+
+double generateStandardNormalRandomVariable() {
+    double u1 = rand() / (double)RAND_MAX;
+    double u2 = rand() / (double)RAND_MAX;
+    return sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
+}
+
+
+double hestonCallOptionPrice(const OptionPricing& priceData) {
+    double kappa = 2.0;
+    double theta = 0.04;
+    double sigma = 0.3;
+    double rho = -0.5;
+    double v0 = priceData.volatility * priceData.volatility;
+    double lambda = 0.0;
+    double muJ = 0.0;
+    double sigmaJ = 0.0;
+    int numSteps = 100;
+    double dt = priceData.timeToMaturity / numSteps;
+    double drift = priceData.riskFreeRate - 0.5 * v0;
+    double vol = priceData.volatility;
+    double spot = priceData.spotPrice;
+    double variance = v0;
+
+    for (int i = 0; i < numSteps; ++i) {
+        double dW1 = sqrt(dt) * generateStandardNormalRandomVariable();
+        double dW2 = rho * dW1 + sqrt(1.0 - rho * rho) * generateStandardNormalRandomVariable();
+        double dS = spot * (drift * dt + vol * sqrt(variance * dt) * dW1);
+        double dV = kappa * (theta - variance) * dt + sigma * sqrt(variance * dt) * dW2;
+        spot += dS;
+        variance += dV;
+        if (variance < 0.0) {
+            variance = -variance;
+        }
+    }
+    double callPrice = std::max(spot - priceData.strikePrice, 0.0);
+    callPrice *= exp(-priceData.riskFreeRate * priceData.timeToMaturity);
+    return callPrice;
+}
+
+
+
+double batesCallOptionPrice(const OptionPricing& priceData) {
+    double kappa = 2.0;
+    double theta = 0.04;
+    double sigma = 0.3;
+    double rho = -0.5;
+    double v0 = priceData.volatility * priceData.volatility;
+    double lambda = 0.5;
+    double muJ = -0.1;
+    double sigmaJ = 0.25;
+    int numSteps = 100;
+    double dt = priceData.timeToMaturity / numSteps;
+    double drift = priceData.riskFreeRate - 0.5 * v0 - lambda * (exp(muJ + 0.5 * sigmaJ * sigmaJ) - 1.0);
+    double vol = priceData.volatility;
+    double spot = priceData.spotPrice;
+    double variance = v0;
+    double jump = 0.0;
+
+    for (int i = 0; i < numSteps; ++i) {
+        double dW1 = sqrt(dt) * generateStandardNormalRandomVariable();
+        double dW2 = rho * dW1 + sqrt(1.0 - rho * rho) * generateStandardNormalRandomVariable();
+        double dN = generatePoissonRandomVariable(lambda * dt);
+        double dS = spot * (drift * dt + vol * sqrt(variance * dt) * dW1);
+        double dV = kappa * (theta - variance) * dt + sigma * sqrt(variance * dt) * dW2;
+        double dJ = jump * dN;
+        spot += dS;
+        variance += dV;
+        jump += dJ;
+        if (variance < 0.0) {
+            variance = -variance;
+        }
+    }
+    double callPrice = std::max(spot + jump - priceData.strikePrice, 0.0);
+    callPrice *= exp(-priceData.riskFreeRate * priceData.timeToMaturity);
+    return callPrice;
+}
+
+
 
 
 #endif
