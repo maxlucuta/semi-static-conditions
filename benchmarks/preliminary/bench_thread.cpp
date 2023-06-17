@@ -3,8 +3,8 @@
 #include "../../src/branch.hpp"
 #include "../../src/switch.hpp"
 
-#define ITER 100000000
-#define FREQ 0.1
+#define ITER 1e12
+#define FREQ 1
 
 /***************************** Globals ******************************/
 
@@ -31,6 +31,7 @@ static void runBranchTwo() {
 }
 
 static void runBranchThree() {
+    std::srand(std::time(nullptr));
     while (thread) {
         flagThree = std::rand() % 3;
         waitForNextEvent(FREQ);
@@ -46,6 +47,7 @@ static void runBranchlessTwo() {
 }
 
 static void runBranchlessThree() {
+    std::srand(std::time(nullptr));
     while (thread) {
         flagThree = std::rand() % 3;
         branchThree.setDirection(flagThree);
@@ -55,6 +57,7 @@ static void runBranchlessThree() {
 
 
 static void setup(const benchmark::State& s) {
+    std::srand(std::time(nullptr));
     flagTwo = random(0,1);
     flagThree = std::rand() % 3;
     thread = true;
@@ -129,6 +132,6 @@ static void benchmarkBranchlessThree(benchmark::State& s) {
 
 /***************************** Benchmark ***************************/
 
-BENCHMARK(benchmarkBranchThree);
-BENCHMARK(benchmarkBranchlessThree);
+BENCHMARK(benchmarkBranchTwo);
+BENCHMARK(benchmarkBranchlessTwo);
 BENCHMARK_MAIN();

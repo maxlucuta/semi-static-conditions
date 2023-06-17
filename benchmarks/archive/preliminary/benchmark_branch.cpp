@@ -42,7 +42,7 @@ static void runBranch(int sleep) {
     do {
         flag = !flag;
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(sleep)
         );
     } while (run);
 }

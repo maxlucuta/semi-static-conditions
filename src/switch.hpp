@@ -11,7 +11,7 @@
 
 #define DWORD 4
 #define QWORD 8
-#define N 4
+#define N 3
 #define JMP_OPCODE 0xe9
 
 
@@ -90,6 +90,7 @@ class BranchChangerSwitch
         {
             std::memcpy(bytecodeToEdit, jumpOffsets[condition], DWORD);
         }
+
 };
 
 

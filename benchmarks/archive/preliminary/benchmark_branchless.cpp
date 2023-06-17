@@ -22,7 +22,7 @@
 
 #include <benchmark/benchmark.h>
 #include <thread>
-#include "../../branch.h"
+#include "branch.hpp"
 
 #define N 100000000
 
@@ -49,7 +49,7 @@ static void runBranchless(int sleep) {
         flag = !flag;
         branch1.setDirection(flag);
         std::this_thread::sleep_for(
-            std::chrono::microseconds(sleep)
+            std::chrono::nanoseconds(sleep)
         );
     } while (run);
 }

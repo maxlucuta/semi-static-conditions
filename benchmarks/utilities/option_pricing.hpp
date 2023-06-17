@@ -21,7 +21,8 @@ double SND(double n) {
     return 0.5 * (1 + erf(n / sqrt(2)));
 }
 
-double blackScholesEuropean(const OptionPricing priceData) {
+double blackScholesEuropean(const OptionPricing priceData) {//, int flag, int& c) {
+    //c += (0 != flag);
 	double spotPrice = priceData.spotPrice;
 	double strikePrice = priceData.strikePrice;
 	double timeToMaturity = priceData.timeToMaturity;
@@ -37,9 +38,9 @@ double blackScholesEuropean(const OptionPricing priceData) {
 	return callOptionPrice;
 }
 
-double binomialEuropean(const OptionPricing priceData) {
+double binomialEuropean(const OptionPricing priceData) {//, int flag, int& c) {
 
-
+    //c += (1 != flag);
 	double spotPrice = priceData.spotPrice;
 	double strikePrice = priceData.strikePrice;
 	double timeToMaturity = priceData.timeToMaturity;
@@ -151,7 +152,8 @@ double hestonCallOptionPrice(const OptionPricing priceData) {
 
 
 
-double batesCallOptionPrice(const OptionPricing priceData) {
+double batesCallOptionPrice(const OptionPricing priceData) {//, int flag, int& c) {
+    //c += (2 != flag);
     double kappa = 2.0;
     double theta = 0.04;
     double sigma = 0.3;
