@@ -7,7 +7,8 @@
 
     #include <Windows.h>
 
-    size_t getpagesize() {
+    size_t getpagesize() 
+    {
         SYSTEM_INFO systemInfo;
         GetSystemInfo(&systemInfo);
         return systemInfo.dwPageSize;

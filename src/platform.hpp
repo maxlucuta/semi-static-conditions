@@ -1,6 +1,10 @@
 #ifndef PLATFORM_DETECT_HPP
 #define PLATFORM_DETECT_HPP
 
+#define _JUMP_OPCODE 0xe9
+#define _JMP_DISTANCE 2e32
+#define _DWORD 4
+
 #ifndef __cplusplus
     #error "A C++ compiler is required."
 #elif __cplusplus < 201703L

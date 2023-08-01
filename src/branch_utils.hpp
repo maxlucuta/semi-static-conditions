@@ -8,9 +8,13 @@
 
 #include "os_utils.hpp"
 
+template <typename T>
+class branch_changer_aux {};
+       /*Unspecialised template class for CRTP. */
 
 template <typename Func_A, typename Func_B>
-intptr_t _compute_jump_offset(const Func_A src, const Func_B dst) {
+intptr_t _compute_jump_offset(const Func_A src, const Func_B dst) 
+{
        /* Computes offset between two methods in memory accounting for
        size of a JMP instruction in bytes. Pragma directives used to
        hide compiler warnings for void* casts which cannot be avoided
@@ -37,9 +41,10 @@ void _store_offset_as_bytes(const intptr_t& offset, unsigned char* dst);
 
 
 template<typename... Types>
-constexpr auto pack_size = [](auto... args) constexpr {
+constexpr auto pack_size = [](auto... args) constexpr 
+{
        /* Computes the size of a variadic parameter pack using recursive
-       unrolling through lambdas (C++20 feature). */
+       unrolling through lambdas (C++17 feature). */
 
        return sizeof...(Types);
 } (Types{}...);
