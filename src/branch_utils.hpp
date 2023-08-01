@@ -2,6 +2,7 @@
 #define BRANCH_UTILS_HPP
 
 #include <type_traits>
+#include <stdexcept>
 #include <cstdint>
 #include <cstring>
 #include <algorithm>
@@ -48,5 +49,27 @@ constexpr auto pack_size = [](auto... args) constexpr
 
        return sizeof...(Types);
 } (Types{}...);
+
+
+enum class error_codes
+{
+       /* Error handling codes for BranchChanger. */
+
+       BRANCH_TARGET_OUT_OF_BOUNDS,
+       MULTIPLE_INSTANCE_ERROR,
+       PAGE_PERMISSIONS_ERROR
+};
+
+std::string err_to_str(const error_codes& code);
+       /* Error code conversion for exceptions. */
+
+class branch_changer_error : public std::runtime_error
+{
+       /* Runtime exceptions used only, any error that occurs with branch
+       changer is non-recoverable and execution must be stopped. */
+       
+       public:
+       branch_changer_error(const error_codes& code);
+};
 
 #endif

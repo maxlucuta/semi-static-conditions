@@ -18,7 +18,7 @@ class branch_changer_aux<Ret(*)(Args...)>
 		branch_changer_aux() : 
 		bytecode_to_edit((unsigned char*)&branch_changer_aux::branch) {
 			if (instances >= 1) 
-				throw std::runtime_error("Branch entry point shared, undefined behaviour.");
+				throw branch_changer_error(error_codes::MULTIPLE_INSTANCE_ERROR);
 			instances++;
 		}
 
@@ -57,7 +57,7 @@ class branch_changer_aux<Ret(Class::*)(Args...)>
 		branch_changer_aux() : 
 		bytecode_to_edit((unsigned char*)&branch_changer_aux::branch) {
 			if (instances >= 1) 
-				throw std::runtime_error("Branch entry point shared, undefined behaviour.");
+				throw branch_changer_error(error_codes::MULTIPLE_INSTANCE_ERROR);
 			instances++;
 		}
 
@@ -101,7 +101,7 @@ public branch_changer_aux<typename std::common_type<Funcs...>::type>
 			{
 				intptr_t offset = _compute_jump_offset(pack[i], this->bytecode_to_edit);
 				if (offset > _JMP_DISTANCE - 1)
-					throw std::runtime_error("Jump distance exceeds 32-bits.");
+					throw branch_changer_error(error_codes::BRANCH_TARGET_OUT_OF_BOUNDS);
 				_store_offset_as_bytes(offset, jump_offsets[i]);
 			}
 			_change_permissions(this->bytecode_to_edit);
