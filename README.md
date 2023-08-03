@@ -1,6 +1,6 @@
 # Semi-static Conditions
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/your_username/your_library_name/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/maxlucuta/semi-static-conditions/blob/main/LICENSE)
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![CMake](https://img.shields.io/badge/built%20with-CMake-orange.svg)
