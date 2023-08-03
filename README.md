@@ -59,10 +59,21 @@ $ git clone https://github.com/maxlucuta/semi-static-conditions.git
 # Go to the library root directory
 $ cd semi-static-conditions
 # Make a build directory to place the build output.
+$ cmake -E make_directory "build"
+# Generate build system files with cmake.
+$ cmake -E chdir "build" cmake ../
+# Build the library.
+$ cmake --build "build"
+```
+This builds the `branch` library. On a unix system, the build directory should now look something like this:
 
 ```
-
-TODO...
+/semi-static-conditions
+  /build
+    /libbranch.a
+      ...
+  ...
+```
 
 ```bash
 # TODO...
