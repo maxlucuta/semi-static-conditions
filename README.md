@@ -43,9 +43,24 @@ The library can only be used with C++17 and onwards due to various template dedu
 
 The libarary is available on more recent versions of the following compilers:
 
+* GCC 11.2
+* Clang 14.0
+* MSVC 16.1
 
+The library is exclusive to x86-64 and ARM architectures only.
 
 ## Installation
+
+This describes the installation process using cmake. As pre-requisites, you'll need git and cmake installed.
+
+```bash
+# Check out the library.
+$ git clone https://github.com/maxlucuta/semi-static-conditions.git
+# Go to the library root directory
+$ cd semi-static-conditions
+# Make a build directory to place the build output.
+
+```
 
 TODO...
 
