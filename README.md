@@ -12,8 +12,7 @@
 
 Semi-static conditions emulate traditional conditional statements, but seperate condition evaluation logic and branch taking into two distinct methods. This seperation produces an important decoupling between
 relatively cheap and expensive operations,  allowing for more strategic and granular control over conditional branching in low latency settings. Semi-static conditions offers superior branch-taking latencies
-and standard deviations to conditional statements when misprediction rates are high. This project grew out of an MSc project run by Imperial College London carried out by Max Lucuta and supervised by Dr Paul Bilokon. 
-This project is based on an idea by Erez Shermer - Founder, CTO and Managing Member of qSpark, a leading provider of ultra low latency trading platforms for high-frequency algorithmic trading.
+and standard deviations to conditional statements when misprediction rates are high. 
 
 ```c++
 #include <branch.h>
@@ -37,6 +36,8 @@ int main() {
   branch.branch(1,2);
 }
 ```
+This project grew out of an MSc research project run by Imperial College London carried out by Max Lucuta and supervised by Dr Paul Bilokon. 
+This project is based on an idea by Erez Shermer - Founder, CTO and Managing Member of qSpark, a leading provider of ultra low latency trading platforms for high-frequency algorithmic trading.
 
 ## Requirements
 
