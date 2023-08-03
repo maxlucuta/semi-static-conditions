@@ -14,15 +14,36 @@ Semi-static conditions emulate traditional conditional statements, but seperate 
 relatively cheap and expensive operations,  allowing for more strategic and granular control over conditional branching in low latency settings. Semi-static conditions offers superior branch-taking latencies
 and standard deviations to conditional statements when misprediction rates are high.
 
-## Table of Contents
+```c++
+#include <branch.h>
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Benchmarks](#benchmarks)
-- [Applications](#applications)
-- [Authors](#authors)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+int add(int a, int b) {
+  return a + b;
+}
+
+int sub(int a, int b) {
+  return a - b;
+}
+
+int main() {
+  BranchChanger branch(add, sub);
+  // Choose branch direction (if or else!)
+  branch.set_direction(true);
+  // Executes add(1,2) 
+  branch.branch(1,2)
+  branch.set_direction(false);
+  // Executes sub(1,2)
+  branch.branch(1,2);
+}
+```
+
+## Requirements
+
+The library can only be used with C++17 and onwards due to various template deduction schemes used.
+
+The libarary is available on more recent versions of the following compilers:
+
+
 
 ## Installation
 
