@@ -158,3 +158,12 @@ $ g++ mycode.cpp -std=c++17 -isystem semi-static-conditions/include \
 ```
 
 ## Advanced Usage
+
+The goal of this project was primarily for hot-path branch optimisation in HFT systems, particularly for core order flow. Before encorporating semi-static conditions in your project,
+it is important to understand the cost of the `set_direction` and `branch` methods respectively, and how they should be organised in the codebase for optimal usage.
+
+TODO...
+
+## Acknowledgements
+
+Thank you to Erez Shermer, Founder, CTO \& MM at qSpark for proposing and formulating the project. Also a big thank you to Dr Paul Bilokon and the engineers at qSpark for the guidance and feedback throughout the project.
