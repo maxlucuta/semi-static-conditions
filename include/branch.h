@@ -38,11 +38,7 @@ public:
 		optimisations on branch method. Can be controlled with
 		compiler flags for finer granularity. */
 
-    HOT_ATTR
-    NOCF_CHECK_ATTR
-    OPTIMIZE_ATTR("O3")
-    OPTIMIZE_ATTR("no-ipa-cp-clone")
-
+    ATTRIBUTES
     static Ret branch(Args... args)
     {
         /* Entry point for branch taking, first 5 bytes is always
@@ -50,7 +46,7 @@ public:
 			which the proceeding DWORD offsets goes to some branch target
 			passed to constructor. Must never be inlined or have ICP on GCC. */
 
-        asm ("jmp 0x0");
+        ASM_INLINE
         if constexpr (!std::is_void_v<Ret>)
             return Ret{};
     }
@@ -75,15 +71,11 @@ public:
         instances++;
     }
 
-    HOT_ATTR
-    NOCF_CHECK_ATTR
-    OPTIMIZE_ATTR("O3")
-    OPTIMIZE_ATTR("no-ipa-cp-clone")
-
+    ATTRIBUTES
     static Ret branch(const Class& inst, Args... args)
     {
-        asm ("jmp 0x0");
-            if constexpr (!std::is_void_v<Ret>)
+        ASM_INLINE
+        if constexpr (!std::is_void_v<Ret>)
             return Ret{};
     }
 };

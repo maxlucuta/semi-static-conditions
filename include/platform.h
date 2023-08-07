@@ -9,6 +9,7 @@
 #ifdef __x86_64__ 
 #define JUMP_OPCODE_ 0xe9
 #endif
+
 #define JMP_DISTANCE_ 2e32
 #define DWORD_ 4
 
@@ -32,33 +33,29 @@
 #endif
 
 
-#if defined(_MSC_VER)
-#define COMPILER_MSVC
-#elif defined(__GNUC__)
-#define COMPILER_GCC
-#elif defined(__clang__)
-#define COMPILER_CLANG
+#if defined(__clang__) || defined(__GNUC__)
+    #define ASM_INLINE asm("jmp 0x0");
+    #ifdef __has_attribute
+        #if __has_attribute(optimize)
+            #define USING_GCC
+            #if __has_attribute(nocf_check)
+                #define ATTRIBUTES __attribute__((hot,nocf_check,optimize("no-ipa-cp-clone,O3")))
+            #else
+                #define ATTRIBUTES __attribute__((hot,optimize("no-ipa-cp-clone,O3")))
+            #endif
+        #else
+            #define USING_CLANG
+            #define ATTRIBUTES __attribute__((hot,noinline))
+        #endif
+    #endif
+#elif defined(_MSC_VER)
+    #define ASM_INLINE __asm{ jmp $+0x0 };
+    #define USING_MSVC
+    #define ATTR __delspec(noinline)
 #else
-    #error "Compiler not supported!"
+    #error "Compiler is not supported."
 #endif
-
-#ifdef COMPILER_MSVC
-    #define HOT_ATTR __declspec(allocate(".text"))
-    #define NOCF_CHECK_ATTR __declspec(guard(nocf))
-    #define OPTIMIZE_ATTR(value) __pragma(optimize(value))
-#endif
-
-#ifdef COMPILER_GCC
-    #define HOT_ATTR __attribute__((hot))
-    #define NOCF_CHECK_ATTR __attribute__((nocf_check))
-    #define OPTIMIZE_ATTR(value) __attribute__((optimize(value)))
-#endif
-
-#ifdef COMPILER_CLANG
-    #define HOT_ATTR __attribute__((hot))
-    #define NOCF_CHECK_ATTR __attribute__((noinline))
-    #define OPTIMIZE_ATTR(value)
-#endif
+                
 
 
 #endif //SEMI_STATIC_CONDITIONS_PLATFORM_H
