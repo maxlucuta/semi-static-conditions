@@ -8,10 +8,10 @@
 
 #if defined(__x86_64__) 
     #define JUMP_OPCODE_ 0xE9
-    #define JMP_DISTANCE_ 2e32
+    #define JMP_DISTANCE_ 1ULL << 32
 #elif defined(__arm__)
     #define JUMP_OPCODE_ 0xEA
-    #define JMP_DISTANCE_ 2e24
+    #define JMP_DISTANCE_ 1ULL << 24
 #endif
 
 #define DWORD_ 4

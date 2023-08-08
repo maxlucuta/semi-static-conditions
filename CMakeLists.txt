@@ -9,5 +9,5 @@ target_include_directories(branch
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-#enable_testing()
-#add_subdirectory(testing)
+enable_testing()
+add_subdirectory(tests)

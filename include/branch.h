@@ -104,7 +104,7 @@ public:
         for (int i = 0; i < (int)pack.size(); i++)
         {
             intptr_t offset = compute_jump_offset(pack[i], this->bytecode_to_edit);
-            if (offset > JMP_DISTANCE_ - 1)
+            if (abs(offset) > JMP_DISTANCE_ - 1)
                 throw branch_changer_error(error_codes::BRANCH_TARGET_OUT_OF_BOUNDS);
             store_offset_as_bytes(offset, jump_offsets[i]);
         }
