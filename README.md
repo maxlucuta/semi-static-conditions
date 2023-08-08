@@ -77,6 +77,12 @@ This builds the `branch` library. On a unix system, the build directory should n
   ...
 ```
 
+Next, you can run the tests to check the build.
+```bash
+$ cmake -E chdir "build" ctest
+```
+
+
 ## Basic Usage
 
 Semi-static conditions behave as an abstraction to conditional statements and switch statements, with subtle differences occurring at the hardware level.
