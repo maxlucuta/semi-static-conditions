@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <branch.h>
+#include <branch.hpp>
 
 TEST(Jump, OffsetTest) 
 {
@@ -16,7 +16,7 @@ TEST(ByteConversion1, OffsetTest)
     };
     unsigned char dest[4];
     store_offset_as_bytes(offset, dest);
-    for (int i = 0; i < DWORD_; i++)
+    for (int i = 0; i < OFFSET_; i++)
         EXPECT_EQ(dest[i], result[i]);
 }
 
@@ -28,7 +28,7 @@ TEST(ByteConversion2, OffsetTest)
     };
     unsigned char dest[4];
     store_offset_as_bytes(offset, dest);
-    for (int i = 0; i < DWORD_; i++)
+    for (int i = 0; i < OFFSET_; i++)
         EXPECT_EQ(dest[i], result[i]);
 }
 

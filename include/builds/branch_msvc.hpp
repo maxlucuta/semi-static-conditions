@@ -1,0 +1,54 @@
+#ifndef BRANCH_MSVC_HPP
+#define BRANCH_MSVC_HPP
+
+
+#include "branch_base.hpp"
+
+
+template <typename Ret, typename... Args>
+class branch_changer_aux<Ret (*)(Args...)> {
+
+protected:
+    unsigned char* bytecode_to_edit;
+    static uint64_t instances;
+
+public:
+    branch_changer_aux() : 
+    bytecode_to_edit((unsigned char*) &branch_changer_aux::branch) {
+        if (instances >= 1)
+            throw branch_changer_error(error_codes::MULTIPLE_INSTANCE_ERROR);
+        instances++;
+    }
+
+    __delspec(noinline)
+    static Ret branch (Args... args) {
+        if constexpr (!std::is_void_v<Ret>)
+            return Ret{};
+    }
+};
+
+
+template <typename Class, typename Ret, typename... Args>
+class branch_changer_aux<Ret (Class::*)(Args...)> {
+
+protected:
+    unsigned char* bytecode_to_edit;
+    static uint64_t instances;
+
+public:
+    branch_changer_aux () : 
+    bytecode_to_edit ((unsigned char*) &branch_changer_aux::branch) {
+        if (instances >= 1)
+            throw branch_changer_error (error_codes::MULTIPLE_INSTANCE_ERROR);
+        instances++;
+    }
+
+    __delspec(noinline)
+    static Ret branch (const Class& inst, Args... args) {
+        if constexpr (!std::is_void_v<Ret>)
+            return Ret{};
+    }
+};
+
+
+#endif
