@@ -4,9 +4,6 @@
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![CMake](https://img.shields.io/badge/built%20with-CMake-orange.svg)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
-[![Build Status](https://travis-ci.com/your_username/your_library_name.svg?branch=main)](https://travis-ci.com/your_username/your_library_name)
-[![Coverage Status](https://coveralls.io/repos/github/your_username/your_library_name/badge.svg?branch=main)](https://coveralls.io/github/your_username/your_library_name?branch=main)
 
 ## Overview
 
@@ -49,7 +46,7 @@ The libarary is available on more recent versions of the following compilers:
 * Clang 14.0
 * MSVC 16.1
 
-The library is exclusive to x86-64 and ARM architectures only.
+The library is exclusive to x86-64 and ARM-64 architectures only.
 
 ## Installation
 
@@ -165,12 +162,7 @@ $ g++ mycode.cpp -std=c++17 -isystem semi-static-conditions/include \
       -Lsemi-static-conditions/build -lbranch -o mycode
 ```
 
-## Theory & Advanced Usage
-
-The goal of this project was primarily for hot-path branch optimisation in HFT systems, particularly for core order flow. Before encorporating semi-static conditions in your project,
-it is important to understand the cost of the `set_direction` and `branch` methods respectively, and how they should be organised in the codebase for optimal usage.
-
-TODO...
+Each time the `BranchChanger` construct is instantiated, permissions on executable pages may be changed to RWX for the duration of the process. If secuirty is of concern, using the `-DSAFE_MODE` flag will ensure page permissions are changed briefly for assembly editing and then reverted back to read-only. This will increase the cost of `set_direction`.
 
 ## Acknowledgements
 
