@@ -4,7 +4,7 @@
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![CMake](https://img.shields.io/badge/built%20with-CMake-orange.svg)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey.svg)
 
 ## Overview
 
