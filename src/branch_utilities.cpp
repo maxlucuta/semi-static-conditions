@@ -23,7 +23,7 @@ void change_permissions(const unsigned char* address, const permissions& config)
     }
 }
 
-#elif defined(PLATFORM_LINUX_BRANCH) || defined(PLATFORM_MAC_BRANCH)
+#elif defined(PLATFORM_LINUX_BRANCH)
 
 #include <sys/mman.h>
 #include <unistd.h>

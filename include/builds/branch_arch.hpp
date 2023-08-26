@@ -2,10 +2,10 @@
 #define BRANCH_ARCH_HPP
 
 
-#if defined(__GNUC__)
-#define GCC_BUILD_BRANCH
-#elif defined(__clang__)
+#if defined(__clang__)
 #define CLANG_BUILD_BRANCH
+#elif defined(__GNUC__) || defined(__GNUG__)
+#define GCC_BUILD_BRANCH
 #elif defined(_MSC_VER)
 #define MSVC_BUILD_BRANCH
 #else
@@ -36,9 +36,6 @@
 #define PLATFORM_WINDOWS_BRANCH
 #elif defined(__linux__) 
 #define PLATFORM_LINUX_BRANCH
-#elif defined(__APPLE__)
-#define PLATFORM_MAC_BRANCH
-#else
 #error "Operating system not supported."
 #endif
 
@@ -61,7 +58,7 @@
 #elif defined(ARM_BUILD_BRANCH)
 #define JUMP_INSTRUCTION asm ("b 0x0");
 #define JUMP_OPCODE_ 0xEA
-#define JMP_DISTANCE_ 1ULL << 24
+#define JUMP_DISTANCE_ 1ULL << 24
 #define INSTRUCTION_SIZE 4
 #define OFFSET_ 3
 #endif
