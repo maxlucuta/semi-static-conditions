@@ -4,7 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/main.zip
+  GIT_REPOSITORY https://github.com/google/googletest
+  GIT_TAG main
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
