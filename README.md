@@ -4,6 +4,7 @@
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![C++ Version](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![CMake](https://img.shields.io/badge/built%20with-CMake-orange.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
 
 ## Overview
 
@@ -12,7 +13,7 @@ relatively cheap and expensive operations,  allowing for more strategic and gran
 and standard deviations to conditional statements when misprediction rates are high. 
 
 ```c++
-#include <branch.h>
+#include <branch.hpp>
 
 int add(int a, int b) {
   return a + b;
