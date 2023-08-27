@@ -81,8 +81,8 @@ TEST(BranchChanger3, Functionality)
         branch.set_direction(condition);
         std::cout << "Condition: " << condition << std::endl;
         std::cout << "Result: " << branch.branch(1,2) << std::endl;
-        std::cout << "Expected: " << condition ? 3 : -1 << std::endl;
-        EXPECT_EQ(branch.branch(1,2), condition ? 3 : -1);
+        std::cout << "Expected: " << (condition ? 3 : -1) << std::endl;
+        EXPECT_EQ(branch.branch(1,2), (condition ? 3 : -1));
         condition = std::rand() % 2;
     } 
 }
