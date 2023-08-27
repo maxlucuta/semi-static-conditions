@@ -15,6 +15,15 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
+
+    - name: Install CMake
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-get update
+          sudo apt-get install -y cmake
+        elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+          choco install cmake --version 3.21.1
+        fi
     
     - name: Set up CMake
       uses: actions/setup-cmake@v2
