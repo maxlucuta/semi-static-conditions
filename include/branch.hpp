@@ -1,6 +1,7 @@
 #ifndef BRANCH_HPP
 #define BRANCH_HPP
 
+#include <iostream>
 #include "builds/branch_arch.hpp"
 
 #ifdef GCC_BUILD_BRANCH
@@ -28,6 +29,7 @@ public:
         std::vector<typename std::common_type<Funcs...>::type> pack = { funcs... };
         for (int i = 0; i < (int)pack.size(); i++) {
             intptr_t offset = compute_jump_offset(pack[i], this->bytecode_to_edit);
+            std::cout << "offset: " << offset << std::endl;
             if (abs(offset) > (JUMP_DISTANCE_) - 1)
                 throw branch_changer_error(error_codes::BRANCH_TARGET_OUT_OF_BOUNDS);
             store_offset_as_bytes(offset, jump_offsets[i]);
