@@ -13,22 +13,12 @@
 #endif
 
 
-#if defined(GCC_BUILD_BRANCH)  || defined(CLANG_BUILD_BRANCH)
-    #ifdef __x86_64__
-    #define X86_BUILD_BRANCH
-    #elif defined(__aarch64__)
-    #define ARM_BUILD_BRANCH
-    #else
-    #error "Architecture not supported."
-    #endif
+#if defined(__x86_64__) || defined(_M_IX86)
+#define X86_BUILD_BRANCH
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#define ARM_BUILD_BRANCH
 #else
-    #ifdef _M_IX86
-    #define X86_BUILD_BRANCH
-    #elif defined(_M_ARM64)
-    #define ARM_BUILD_BRANCH
-    #else
-    #error "Architecture not supported."
-    #endif
+#error "Architecture not supported."
 #endif
 
 
