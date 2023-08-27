@@ -1,7 +1,7 @@
 #ifndef BRANCH_HPP
 #define BRANCH_HPP
 
-#include <iostream>
+#include <cstdio>
 #include "builds/branch_arch.hpp"
 
 #ifdef GCC_BUILD_BRANCH
@@ -29,7 +29,6 @@ public:
         std::vector<typename std::common_type<Funcs...>::type> pack = { funcs... };
         for (int i = 0; i < (int)pack.size(); i++) {
             intptr_t offset = compute_jump_offset(pack[i], this->bytecode_to_edit);
-            std::cout << "offset: " << offset << std::endl;
             if (abs(offset) > (JUMP_DISTANCE_) - 1)
                 throw branch_changer_error(error_codes::BRANCH_TARGET_OUT_OF_BOUNDS);
             store_offset_as_bytes(offset, jump_offsets[i]);
@@ -44,12 +43,12 @@ public:
             set_direction(1);
         } else
             set_direction(0);
+        printf("%02X%02X%02X%02X\n ", jump_offsets[0]);
+        printf("%02X%02X%02X%02X\n ", jump_offsets[1]);
     }
 
     #ifndef SAFE_MODE
     void set_direction(const uint64_t condition){
-        std::cout << "Current Direction: " << current_direction << std::endl;
-        std::cout << "COND: " << condition << std::endl;
         if (current_direction != condition) {
             std::memcpy(this->bytecode_to_edit, jump_offsets[condition], OFFSET_);
             current_direction = condition;
