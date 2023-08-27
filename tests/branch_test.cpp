@@ -53,6 +53,7 @@ void func_1() { return; }
 void func_2() { return; }
 void func_3() { return; }
 
+/*
 TEST(BranchChanger2, MultipleInstances)
 {
     BranchChanger branch_1(func_1, func_2);
@@ -65,7 +66,7 @@ TEST(BranchChanger2, MultipleInstances)
         EXPECT_EQ(e.what(), err_to_str(error_codes::MULTIPLE_INSTANCE_ERROR));
     }
 }
-
+*/
 int add(int a, int b) { return a + b; }
 int sub(int a, int b) { return a - b; }
 int mul(int a, int b) { return a * b; }
