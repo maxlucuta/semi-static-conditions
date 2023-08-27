@@ -24,7 +24,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #define PLATFORM_WINDOWS_BRANCH
-#elif defined(__linux__) 
+#elif defined(__linux__) || defined(__unix__)
 #define PLATFORM_LINUX_BRANCH
 #error "Operating system not supported."
 #endif
