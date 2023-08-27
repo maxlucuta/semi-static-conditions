@@ -3,7 +3,7 @@
 
 TEST(Jump, OffsetTest) 
 {
-    unsigned char* some_func;
+    unsigned char* some_func = reinterpret_cast<unsigned char*>(0xff);
     unsigned char* some_other_func = (some_func) + 12;
     EXPECT_EQ(compute_jump_offset(some_func, some_other_func), -17);
 }
@@ -35,7 +35,7 @@ TEST(ByteConversion2, OffsetTest)
 TEST(BranchChanger1, OutOfBounds)
 {
     using ptr = int(*)(int, int);
-    ptr func_1;
+    ptr func_1 = reinterpret_cast<ptr>(0xff);
     ptr func_2 = reinterpret_cast<ptr>(
         reinterpret_cast<intptr_t>(func_1) + (static_cast<intptr_t>(1) << 34)
     );

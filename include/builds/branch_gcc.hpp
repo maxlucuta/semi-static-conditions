@@ -48,7 +48,11 @@ public:
         instances++;
     }
 
-     __attribute__((hot,nocf_check,optimize("no-ipa-cp-clone,O3")))
+    #ifndef PLATFORM_WINDOWS_BRANCH
+    __attribute__((hot,nocf_check,optimize("no-ipa-cp-clone,O3")))
+    #else
+    __attribute__((hot,optimize("no-ipa-cp-clone,O3")))
+    #endif
     static Ret branch (const Class& inst, Args... args) {
         JUMP_INSTRUCTION
         if constexpr (!std::is_void_v<Ret>)

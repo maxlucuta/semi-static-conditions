@@ -20,7 +20,7 @@ public:
         instances++;
     }
 
-    __delspec(noinline)
+    __declspec(noinline)
     static Ret branch (Args... args) {
         if constexpr (!std::is_void_v<Ret>)
             return Ret{};
@@ -43,7 +43,7 @@ public:
         instances++;
     }
 
-    __delspec(noinline)
+    __declspec(noinline)
     static Ret branch (const Class& inst, Args... args) {
         if constexpr (!std::is_void_v<Ret>)
             return Ret{};
