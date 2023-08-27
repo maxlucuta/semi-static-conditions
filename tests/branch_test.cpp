@@ -79,9 +79,6 @@ TEST(BranchChanger3, Functionality)
     for (int i = 0; i < 100; i++) 
     {
         branch.set_direction(condition);
-        std::cout << "Condition: " << condition << std::endl;
-        std::cout << "Result: " << branch.branch(1,2) << std::endl;
-        std::cout << "Expected: " << (condition ? 3 : -1) << std::endl;
         EXPECT_EQ(branch.branch(1,2), (condition ? 3 : -1));
         condition = std::rand() % 2;
     } 
@@ -90,7 +87,7 @@ TEST(BranchChanger3, Functionality)
 TEST(BranchChanger4, Functionality)
 {
     BranchChanger branch(add, sub, mul);
-    bool condition = std::rand() % 3;
+    uint64_t condition = std::rand() % 3;
     for (int i = 0; i < 100; i++) 
     {
         branch.set_direction(condition);
@@ -99,9 +96,6 @@ TEST(BranchChanger4, Functionality)
         if (condition == 0) answer = 3;
         else if (condition == 1) answer = -1;
         else answer = 2;
-        std::cout << "Condition: " << condition << std::endl;
-        std::cout << "Result: " << result << std::endl;
-        std::cout << "Expected: " << answer << std::endl;
         EXPECT_EQ(result, answer);
         condition = std::rand() % 3;
     } 
