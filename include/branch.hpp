@@ -48,6 +48,8 @@ public:
 
     #ifndef SAFE_MODE
     void set_direction(const uint64_t condition){
+        std::cout << "Current Direction: " << current_direction << std::endl;
+        std::cout << "COND: " << condition << std::endl;
         if (current_direction != condition) {
             std::memcpy(this->bytecode_to_edit, jump_offsets[condition], OFFSET_);
             current_direction = condition;
