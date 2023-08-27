@@ -1,7 +1,6 @@
 #ifndef BRANCH_HPP
 #define BRANCH_HPP
 
-#include <cstdio>
 #include "builds/branch_arch.hpp"
 
 #ifdef GCC_BUILD_BRANCH
@@ -43,8 +42,6 @@ public:
             set_direction(1);
         } else
             set_direction(0);
-        printf("%02X%02X%02X%02X\n ", jump_offsets[0]);
-        printf("%02X%02X%02X%02X\n ", jump_offsets[1]);
     }
 
     #ifndef SAFE_MODE
