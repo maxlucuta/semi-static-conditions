@@ -26,9 +26,15 @@ TEST(ByteConversion1, OffsetTest) {
         0xC4, 0x04, 0x00, 0x00 
     };
     #else
-    unsigned char result[4] = { 
-        0xC0, 0x00, 0x04, 0xC4 
-    };
+        #if ARM_BUILD_BRANCH
+        unsigned char result[3] = { 
+            0x00, 0x04, 0xC4 
+        };
+        #else
+        unsigned char result[3] = { 
+            0x00, 0x00, 0x04, 0xC4 
+        };
+        #endif
     #endif
     unsigned char dest[4];
     store_offset_as_bytes(offset, dest);
@@ -44,9 +50,15 @@ TEST(ByteConversion2, OffsetTest) {
         0x3C, 0xFB, 0xFF, 0xFF  
     };
     #else
-    unsigned char result[4] = { 
-        0xFF, 0xFF, 0xFB, 0x3C 
-    };
+        #if ARM_BUILD_BRANCH
+        unsigned char result[4] = { 
+            0xFF, 0xFB, 0x3C 
+        };
+        #else
+        unsigned char result[4] = { 
+            0xFF, 0xFF, 0xFB, 0x3C 
+        };
+        #endif
     #endif
     unsigned char dest[4];
     store_offset_as_bytes(offset, dest);

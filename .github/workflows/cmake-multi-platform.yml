@@ -32,6 +32,7 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
 
+
     steps:
     - uses: actions/checkout@v3
 
@@ -41,7 +42,8 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Configure CMake
+    - name: Configure CMake Linux
+      if: matrix.os == 'ubuntu-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -49,19 +51,21 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
 
+    - name: Configure CMake Windows
+      if: matrix.os == 'windows-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DDISABLE_GITHUB_WORKFLOW_WINDOWS=ON
+        -S ${{ github.workspace }}
+
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Run Tests (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Run Tests
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: |
-        ctest --build-config ${{ matrix.build_type }} 
-
-    - name: Run Tests (Windows)
-      if: matrix.os == 'windows-latest'
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: |
-        ctest --build-config ${{ matrix.build_type }} -DGITHUB_WORKFLOW_WINDOWS
+      run: ctest --build-config ${{ matrix.build_type }} 
 
         
