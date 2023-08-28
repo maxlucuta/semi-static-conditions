@@ -167,4 +167,6 @@ Each time the `BranchChanger` construct is instantiated, permissions on executab
 
 ## Acknowledgements
 
-Thank you to Erez Shermer, Founder, CTO \& MM at qSpark for proposing and formulating the project. Also a big thank you to Dr Paul Bilokon and the engineers at qSpark for the guidance and feedback throughout the project.
+Thank you to Erez Shermer, Founder, CTO \& MM at qSpark for proposing and formulating the project. Also a big thank you to Dr Paul Bilokon, Jonathan Keinan, Lior Keren, Nataly Rasovsky, Nimrod Sapir, Michael Stevenson, and other
+colleagues at qSpark for the supervision and constructive suggestions throughout the project.
+
