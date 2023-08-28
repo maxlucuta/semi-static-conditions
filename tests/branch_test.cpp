@@ -41,11 +41,11 @@ TEST(ByteConversion2, OffsetTest) {
     intptr_t offset = -1220;
     #ifdef LITTLE_ENDIAN_BRANCH
     unsigned char result[4] = { 
-        0xFF, 0xFF, 0xFB, 0x3C 
+        0x3C, 0xFB, 0xFF, 0xFF  
     };
     #else
     unsigned char result[4] = { 
-        0x3C, 0xFB, 0xFF, 0xFF 
+        0xFF, 0xFF, 0xFB, 0x3C 
     };
     #endif
     unsigned char dest[4];
