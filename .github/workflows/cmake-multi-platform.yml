@@ -57,6 +57,7 @@ jobs:
       run: |
         if [[ ${{ matrix.os }} == 'ubuntu-latest' ]]; then
           ctest --build-config ${{ matrix.build_type }} --output-on-failure
-        else
+        fi
+        if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
           ctest --build-config ${{ matrix.build_type }} -DGITHUB_WORKFLOW_WINDOWS
         fi
