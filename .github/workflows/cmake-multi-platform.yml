@@ -54,4 +54,9 @@ jobs:
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
+      run: |
+        if [ ${{ matrix.os }} == 'ubuntu-latest' ]; then
+          ctest --build-config ${{ matrix.build_type }} --output-on-failure
+        elif [ ${{ matrix.os }} == 'windows-latest' ]; then
+          ctest --build-config ${{ matrix.build_type }} -DGITHUB_WORKFLOW_WINDOWS
+        fi
