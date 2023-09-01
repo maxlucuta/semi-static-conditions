@@ -83,7 +83,7 @@ $ cmake -E chdir "build" ctest
 
 ## Basic Usage
 
-Semi-static conditions behave as an abstraction to conditional statements and switch statements, with subtle differences occurring at the hardware level.
+Semi-static conditions behave as an abstraction to conditional statements and switch statements, but remove the runtime cost associated with branch-taking.
 To start off using this, define a set of functions that are your 'branches', these must all have identical signatures to for the construct to work.
 
 ```c++
