@@ -17,11 +17,19 @@ class BranchChanger :
 public branch_changer_aux<typename std::common_type<Funcs...>::type> {
 
     static_assert(pack_size<Funcs...> > 1);
+    using functor = void(*)();
 
 private:
     uint64_t current_direction;
     unsigned char jump_offsets[pack_size<Funcs...>][OFFSET_];
+    functor force_smc_clear;
 
+    void _initilise_smc_functor() {
+        unsigned char* branch_copy = this->bytecode_to_edit;
+        for (int i = 0; i < OFFSET_; i++)
+            branch_copy++;
+        force_smc_clear = (functor)branch_copy;
+    }
 
 public:
     explicit BranchChanger(const Funcs... funcs) : current_direction(-1) {
@@ -33,7 +41,9 @@ public:
             store_offset_as_bytes(offset, jump_offsets[i]);
         }
         change_permissions(this->bytecode_to_edit, permissions::READ_WRITE_EXECUTE);
+        change_permissions(this->bytecode_to_edit + 16, permissions::READ_WRITE_EXECUTE);
         *this->bytecode_to_edit++ = JUMP_OPCODE_;
+        _initilise_smc_functor();
         #ifdef SAFE_MODE
         change_permissions(this->bytecode_to_edit, permissions::READ_EXECUTE);
         #endif
@@ -49,6 +59,7 @@ public:
         if (current_direction != condition) {
             std::memcpy(this->bytecode_to_edit, jump_offsets[condition], OFFSET_);
             current_direction = condition;
+            force_smc_clear();
         }
     }
 
