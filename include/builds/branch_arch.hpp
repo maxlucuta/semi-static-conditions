@@ -44,6 +44,7 @@
 #define JUMP_INSTRUCTION asm ("jmp 0x0");
 #define INSTRUCTION_SIZE 5
 #define JUMP_OPCODE_ 0xE9
+#define RET_OPCODE_ 0xC3
 #define JUMP_DISTANCE_ 1ULL << 32
 #define OFFSET_ 4
 #elif defined(ARM_BUILD_BRANCH)

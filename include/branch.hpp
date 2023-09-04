@@ -17,19 +17,25 @@ class BranchChanger :
 public branch_changer_aux<typename std::common_type<Funcs...>::type> {
 
     static_assert(pack_size<Funcs...> > 1);
-    using functor = void(*)();
 
 private:
     uint64_t current_direction;
     unsigned char jump_offsets[pack_size<Funcs...>][OFFSET_];
+
+    #if defined(GCC_BUILD_BRANCH) || defined(CLANG_BUILD_BRANCH) 
+    using functor = void(*)();
     functor force_smc_clear;
 
     void _initilise_smc_functor() {
         unsigned char* branch_copy = this->bytecode_to_edit;
         for (int i = 0; i < OFFSET_; i++)
             branch_copy++;
+        #ifdef X86_BUILD_BRANCH
+        *branch_copy = RET_OPCODE_;
+        #endif
         force_smc_clear = (functor)branch_copy;
     }
+    #endif
 
 public:
     explicit BranchChanger(const Funcs... funcs) : current_direction(-1) {
@@ -41,9 +47,10 @@ public:
             store_offset_as_bytes(offset, jump_offsets[i]);
         }
         change_permissions(this->bytecode_to_edit, permissions::READ_WRITE_EXECUTE);
-        change_permissions(this->bytecode_to_edit + 16, permissions::READ_WRITE_EXECUTE);
         *this->bytecode_to_edit++ = JUMP_OPCODE_;
+        #if defined(GCC_BUILD_BRANCH) || defined(CLANG_BUILD_BRANCH) 
         _initilise_smc_functor();
+        #endif
         #ifdef SAFE_MODE
         change_permissions(this->bytecode_to_edit, permissions::READ_EXECUTE);
         #endif
@@ -59,7 +66,9 @@ public:
         if (current_direction != condition) {
             std::memcpy(this->bytecode_to_edit, jump_offsets[condition], OFFSET_);
             current_direction = condition;
+            #if defined(GCC_BUILD_BRANCH) || defined(CLANG_BUILD_BRANCH) 
             force_smc_clear();
+            #endif
         }
     }
 
@@ -69,6 +78,9 @@ public:
             change_permissions(this->bytecode_to_edit, permissions::READ_WRITE_EXECUTE);
             std::memcpy(this->bytecode_to_edit, jump_offsets[condition], OFFSET_);
             current_direction = condition;
+            #if defined(GCC_BUILD_BRANCH) || defined(CLANG_BUILD_BRANCH) 
+            force_smc_clear();
+            #endif
             change_permissions(this->bytecode_to_edit, permissions::READ_EXECUTE);
         }
     }
@@ -82,6 +94,7 @@ uint64_t branch_changer_aux<Ret (*)(Args...)>::instances = 0;
 
 template <typename Class, typename Ret, typename... Args>
 uint64_t branch_changer_aux<Ret (Class::*)(Args...)>::instances = 0;
+
 
 
 #endif

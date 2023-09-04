@@ -20,7 +20,7 @@ public:
         instances++;
     }
 
-    #ifndef PLATFORM_WINDOWS_BRANCH
+    #if defined(PLATFORM_LINUX_BRANCH) && !defined(ARM_BUILD_BRANCH)
     __attribute__((hot,nocf_check,optimize("no-ipa-cp-clone,O3")))
     #else
     __attribute__((hot,optimize("no-ipa-cp-clone,O3")))
@@ -48,7 +48,7 @@ public:
         instances++;
     }
 
-    #ifndef PLATFORM_WINDOWS_BRANCH
+    #if defined(PLATFORM_LINUX_BRANCH) && !defined(ARM_BUILD_BRANCH)
     __attribute__((hot,nocf_check,optimize("no-ipa-cp-clone,O3")))
     #else
     __attribute__((hot,optimize("no-ipa-cp-clone,O3")))
