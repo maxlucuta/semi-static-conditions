@@ -14,8 +14,18 @@ enum class error_codes {
 
 std::string err_to_str(const error_codes& code);
 
+    /**
+     * Converts a custom error code to string representation.
+    */
 
-class branch_changer_error : public std::runtime_error {       
+
+class branch_changer_error : public std::runtime_error { 
+
+    /**
+     * Custom exception class for BranchChanger specific
+     * exception handling.
+    */
+
 public:
     explicit branch_changer_error(const error_codes& code);
 };

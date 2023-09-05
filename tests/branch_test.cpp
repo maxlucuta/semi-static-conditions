@@ -82,7 +82,8 @@ TEST(BranchChanger1, OutOfBounds) {
     }
 }
 
-
+// For GitHub workflows bug on Windows.
+// Tests work locally.
 #ifndef GITHUB_WORKFLOW_WINDOWS
 
 TEST(BranchChanger2, MultipleInstances) {
